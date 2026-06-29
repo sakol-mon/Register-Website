@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Registration</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <header class="site-header">
+    <a href="index.html" class="logo">
+      <span class="logo-icon">🎟️</span>
+      <span class="logo-text">EventReg</span>
+    </a>
+    <nav>
+      <a href="index.html">Register</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero">
+    <h1>Register for Your <span>Next Event</span></h1>
+    <p>Fill out the form below to secure your spot. We'll send a confirmation to your email.</p>
+  </section>
+
+  <!-- ===== Main ===== -->
+  <main>
+    <div class="registration-card">
+      <div class="card-header">
+        <h2>Registration Form</h2>
+        <p>All fields marked with <strong>*</strong> are required.</p>
+      </div>
+
+      <div class="card-body">
+        <form class="registration-form" id="registrationForm" action="success.html" method="get" novalidate>
+
+          <!-- Personal Information -->
+          <div class="section-divider">Personal Information</div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstName">First Name <span class="required">*</span></label>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                placeholder="Jane"
+                required
+                autocomplete="given-name"
+              />
+            </div>
+            <div class="form-group">
+              <label for="lastName">Last Name <span class="required">*</span></label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                placeholder="Doe"
+                required
+                autocomplete="family-name"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address <span class="required">*</span></label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="jane.doe@example.com"
+              required
+              autocomplete="email"
+            />
+            <span class="field-hint">We'll send your confirmation to this address.</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                placeholder="+1 (555) 000-0000"
+                autocomplete="tel"
+              />
+            </div>
+            <div class="form-group">
+              <label for="age">Age <span class="required">*</span></label>
+              <input
+                type="number"
+                id="age"
+                name="age"
+                placeholder="25"
+                min="1"
+                max="120"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Event Details -->
+          <div class="section-divider">Event Details</div>
+
+          <div class="form-group">
+            <label for="eventName">Select Event <span class="required">*</span></label>
+            <select id="eventName" name="eventName" required>
+              <option value="" disabled selected>— Choose an event —</option>
+              <option value="tech-summit">Tech Summit 2026 (Aug 15)</option>
+              <option value="music-festival">Summer Music Festival (Jul 20)</option>
+              <option value="art-expo">Annual Art Expo (Sep 3)</option>
+              <option value="startup-conf">Startup Conference (Oct 12)</option>
+              <option value="charity-run">Charity Fun Run (Nov 5)</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="eventDate">Preferred Date <span class="required">*</span></label>
+              <input
+                type="date"
+                id="eventDate"
+                name="eventDate"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="guests">Number of Guests</label>
+              <input
+                type="number"
+                id="guests"
+                name="guests"
+                placeholder="1"
+                min="1"
+                max="10"
+                value="1"
+              />
+            </div>
+          </div>
+
+          <!-- Ticket Type -->
+          <div class="form-group">
+            <label>Ticket Type <span class="required">*</span></label>
+            <div class="ticket-options">
+
+              <div class="ticket-option">
+                <input type="radio" id="ticketStandard" name="ticketType" value="standard" checked />
+                <label for="ticketStandard">
+                  <span class="ticket-icon">🎫</span>
+                  <span class="ticket-name">Standard</span>
+                  <span class="ticket-price">Free</span>
+                </label>
+              </div>
+
+              <div class="ticket-option">
+                <input type="radio" id="ticketVip" name="ticketType" value="vip" />
+                <label for="ticketVip">
+                  <span class="ticket-icon">⭐</span>
+                  <span class="ticket-name">VIP</span>
+                  <span class="ticket-price">$49</span>
+                </label>
+              </div>
+
+              <div class="ticket-option">
+                <input type="radio" id="ticketPremium" name="ticketType" value="premium" />
+                <label for="ticketPremium">
+                  <span class="ticket-icon">💎</span>
+                  <span class="ticket-name">Premium</span>
+                  <span class="ticket-price">$99</span>
+                </label>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Additional Info -->
+          <div class="section-divider">Additional Info</div>
+
+          <div class="form-group">
+            <label for="organization">Organization / Company</label>
+            <input
+              type="text"
+              id="organization"
+              name="organization"
+              placeholder="Acme Corp"
+              autocomplete="organization"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="specialRequirements">Special Requirements</label>
+            <textarea
+              id="specialRequirements"
+              name="specialRequirements"
+              placeholder="Dietary restrictions, accessibility needs, or anything else we should know…"
+            ></textarea>
+          </div>
+
+          <!-- Terms -->
+          <div class="form-group-checkbox">
+            <input type="checkbox" id="terms" name="terms" required />
+            <label for="terms">
+              I agree to the <a href="#">Terms &amp; Conditions</a> and
+              <a href="#">Privacy Policy</a>. <span class="required">*</span>
+            </label>
+          </div>
+
+          <div class="form-group-checkbox">
+            <input type="checkbox" id="newsletter" name="newsletter" />
+            <label for="newsletter">
+              Keep me updated about future events and news.
+            </label>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn-submit">
+            <span class="btn-icon">✅</span>
+            Complete Registration
+          </button>
+
+        </form>
+      </div><!-- /.card-body -->
+    </div><!-- /.registration-card -->
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="site-footer" id="contact">
+    <p>&copy; 2026 EventReg. All rights reserved.</p>
+  </footer>
+
+  <!-- ===== Client-side Validation ===== -->
+  <script>
+    const form = document.getElementById('registrationForm');
+
+    form.addEventListener('submit', function (e) {
+      const requiredFields = form.querySelectorAll('[required]');
+      let valid = true;
+
+      requiredFields.forEach(function (field) {
+        field.style.borderColor = '';
+        var isEmpty = field.type === 'checkbox'
+          ? !field.checked
+          : !String(field.value).trim();
+        if (isEmpty) {
+          field.style.borderColor = '#e94560';
+          if (valid) {
+            field.focus();
+          }
+          valid = false;
+        }
+      });
+
+      if (!valid) {
+        e.preventDefault();
+      }
+    });
+
+    // Remove red border as user types / changes value
+    form.querySelectorAll('input, select, textarea').forEach(function (el) {
+      el.addEventListener('input', function () {
+        el.style.borderColor = '';
+      });
+      el.addEventListener('change', function () {
+        el.style.borderColor = '';
+      });
+    });
+  </script>
+
+</body>
+</html>
