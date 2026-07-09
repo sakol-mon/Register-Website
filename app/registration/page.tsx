@@ -1,0 +1,263 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { Menu, X } from "lucide-react";
+import Link from "next/link";
+import { FormEvent, useEffect, useState } from "react";
+
+const navLinks = ["Home", "About", "Speakers", "Schedule", "Registration", "Contact"];
+
+function navHref(item: string): string {
+  return item === "Home" ? "/" : `/#${item.toLowerCase()}`;
+}
+
+const workshopOptions = [
+  "NotebookLM",
+  "Claude",
+  "Gemini",
+  "PRISM",
+  "Antigravity 2.0",
+  "n8n",
+  "Scopus AI / Consensus / Elicit",
+  "Data Analysis with AI",
+];
+
+export default function RegistrationPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [previewName, setPreviewName] = useState("");
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 18);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const fullName = String(formData.get("fullName") ?? "");
+
+    setPreviewName(fullName);
+    setSubmitted(true);
+
+    // TODO: connect this payload to API/database when backend is ready.
+    console.log("Registration payload prepared:", Object.fromEntries(formData.entries()));
+  };
+
+  const handleTopicToggle = (topic: string, checked: boolean) => {
+    setSelectedTopics((prev) => {
+      if (checked) {
+        if (prev.includes(topic) || prev.length >= 2) {
+          return prev;
+        }
+
+        return [...prev, topic];
+      }
+
+      return prev.filter((item) => item !== topic);
+    });
+  };
+
+  return (
+    <div className="relative">
+      <header
+        className={[
+          "fixed inset-x-0 top-0 z-50 transition-all duration-300",
+          scrolled ? "bg-[#13072e]/65 backdrop-blur-xl border-b border-white/10" : "bg-transparent",
+        ].join(" ")}
+      >
+        <div className="section-shell flex h-20 items-center justify-between">
+          <Link href="/" className="focus-ring rounded-full px-3 py-2 text-sm font-semibold tracking-[0.2em] text-white" aria-label="Go to home section">
+            LIBRARY AI LAB
+          </Link>
+
+          <nav className="hidden items-center gap-7 md:flex" aria-label="Primary navigation">
+            {navLinks.map((item) => (
+              <Link
+                key={item}
+                className="focus-ring rounded-full px-2 py-1 text-sm text-zinc-200 transition hover:text-cyan-200"
+                href={navHref(item)}
+              >
+                {item}
+              </Link>
+            ))}
+          </nav>
+
+          <button
+            type="button"
+            className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white md:hidden"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-menu"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+
+        {mobileMenuOpen && (
+          <div id="mobile-menu" className="section-shell pb-5 md:hidden">
+            <div className="glass-card p-4">
+              <div className="flex flex-col gap-2">
+                {navLinks.map((item) => (
+                  <Link
+                    key={item}
+                    href={navHref(item)}
+                    className="focus-ring rounded-xl px-4 py-2 text-sm text-zinc-100 hover:bg-white/8"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </header>
+
+      <main className="relative min-h-screen overflow-hidden py-24 pt-28">
+        <div className="bg-wave" aria-hidden="true" />
+        <section className="section-shell relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
+          className="glass-card mx-auto max-w-4xl p-6 sm:p-10"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm tracking-[0.2em] text-cyan-200">REGISTRATION FORM</p>
+              <h1 className="mt-2 font-(family-name:--font-poppins) text-3xl font-bold text-white sm:text-4xl">แบบฟอร์มรับสมัคร LIBRARY AI LAB</h1>
+              <p className="mt-3 max-w-2xl text-zinc-300">กรอกข้อมูลเพื่อแสดงความประสงค์เข้าร่วมกิจกรรม ข้อมูลยังไม่ถูกบันทึกลงฐานข้อมูลจริงในขณะนี้</p>
+            </div>
+            <Link
+              href="/"
+              className="focus-ring inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-5 py-2 text-sm font-semibold text-zinc-100 transition hover:border-cyan-300/50 hover:text-cyan-100"
+            >
+              กลับหน้าแรก
+            </Link>
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-8 grid gap-5">
+            <div className="grid gap-5 md:grid-cols-2">
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-zinc-100">ชื่อ-นามสกุล</span>
+                <input
+                  name="fullName"
+                  required
+                  className="focus-ring rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-400"
+                  placeholder="เช่น นายสมชาย ใจดี"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-zinc-100">อีเมล</span>
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  className="focus-ring rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-400"
+                  placeholder="name@example.com"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-zinc-100">หมายเลขโทรศัพท์</span>
+                <input
+                  name="phone"
+                  required
+                  className="focus-ring rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-400"
+                  placeholder="08x-xxx-xxxx"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-zinc-100">หน่วยงาน/คณะ</span>
+                <input
+                  name="organization"
+                  required
+                  className="focus-ring rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-400"
+                  placeholder="ระบุหน่วยงานหรือคณะ"
+                />
+              </label>
+            </div>
+
+            <label className="grid gap-2">
+              <span className="text-sm font-semibold text-zinc-100">สถานะผู้สมัคร</span>
+              <select
+                name="role"
+                required
+                defaultValue=""
+                className="focus-ring rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-zinc-100"
+              >
+                <option value="" disabled className="text-black">
+                  เลือกสถานะ
+                </option>
+                <option value="student" className="text-black">
+                  นักศึกษามหาวิทยาลัยมหิดล
+                </option>
+                <option value="staff" className="text-black">
+                  บุคลากรมหาวิทยาลัยมหิดล
+                </option>
+                <option value="school-network" className="text-black">
+                  ครู/นักเรียน เครือข่ายความร่วมมือ
+                </option>
+                <option value="general" className="text-black">
+                  บุคคลทั่วไป/ผู้สนใจ
+                </option>
+              </select>
+            </label>
+
+            <fieldset className="rounded-2xl border border-white/20 bg-white/8 p-4">
+              <legend className="px-2 text-sm font-semibold text-zinc-100">หัวข้อที่สนใจ (เลือกได้ไม่เกิน 2 รายการ)</legend>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {workshopOptions.map((topic) => (
+                  <label key={topic} className="inline-flex items-center gap-2 text-sm text-zinc-200">
+                    <input
+                      type="checkbox"
+                      name="topics"
+                      value={topic}
+                      checked={selectedTopics.includes(topic)}
+                      disabled={selectedTopics.length >= 2 && !selectedTopics.includes(topic)}
+                      onChange={(event) => handleTopicToggle(topic, event.target.checked)}
+                      className="h-4 w-4 accent-cyan-300 disabled:cursor-not-allowed disabled:opacity-45"
+                    />
+                    {topic}
+                  </label>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-zinc-400">เลือกแล้ว {selectedTopics.length}/2 รายการ</p>
+            </fieldset>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button
+                type="submit"
+                className="focus-ring inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#7c3aed] to-[#38bdf8] px-7 py-3 font-semibold text-white shadow-[0_0_30px_rgba(56,189,248,0.45)] transition hover:scale-105 hover:shadow-[0_0_38px_rgba(56,189,248,0.65)]"
+              >
+                ส่งข้อมูลสมัคร
+              </button>
+              <p className="text-xs text-zinc-400">สถานะตอนนี้: โหมดเตรียมระบบ (ยังไม่บันทึกลงฐานข้อมูลจริง)</p>
+            </div>
+          </form>
+
+          {submitted && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-4 text-cyan-100"
+            >
+              รับข้อมูลแบบฟอร์มเรียบร้อยแล้ว{previewName ? `: ${previewName}` : ""} (โหมดจำลอง)
+            </motion.div>
+          )}
+        </motion.div>
+        </section>
+      </main>
+    </div>
+  );
+}
