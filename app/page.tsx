@@ -120,7 +120,7 @@ type CountdownState = {
   expired: boolean;
 };
 
-const targetDate = new Date("2026-11-25T13:00:00+07:00");
+const targetDate = new Date("2026-08-19T09:00:00+07:00");
 function formatCountdown(now: number): CountdownState {
   const distance = targetDate.getTime() - now;
   if (distance <= 0) {
