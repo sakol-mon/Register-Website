@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## GitHub Pages
+
+This project is configured for static export and GitHub Pages deployment.
+
+- Static output is generated into `out/` during `npm run build`.
+- The GitHub Actions workflow at `.github/workflows/deploy-pages.yml` deploys the site automatically from the `main` branch.
+- The current configuration assumes the repository name is `Register-Website`, so the published site path is `/Register-Website/` on GitHub Pages.
+
+If you rename the repository, update `repoName` in `next.config.ts`.
+
 ## Getting Started
 
 First, run the development server:
