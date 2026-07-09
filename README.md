@@ -6,9 +6,15 @@ This project is configured for static export and GitHub Pages deployment.
 
 - Static output is generated into `out/` during `npm run build`.
 - The GitHub Actions workflow at `.github/workflows/deploy-pages.yml` deploys the site automatically from the `main` branch.
+- A ready-to-publish `docs/` folder is also included as a fallback for GitHub Pages branch-based publishing.
 - The current configuration assumes the repository name is `Register-Website`, so the published site path is `/Register-Website/` on GitHub Pages.
 
 If you rename the repository, update `repoName` in `next.config.ts`.
+
+If GitHub Pages is showing the repository README instead of the website, the Pages source is pointing at the repository root instead of the built site.
+
+- Preferred: set `Settings > Pages > Source` to `GitHub Actions`.
+- Fallback: set `Settings > Pages > Source` to `Deploy from a branch`, branch `main`, folder `/docs`.
 
 ## Getting Started
 
