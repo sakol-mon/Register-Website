@@ -236,6 +236,27 @@ body::after {
   animation: accordion-up 0.2s ease-out;
 }
 
+.ai-text {
+  font-family: var(--font-poppins), sans-serif;
+  font-weight: inherit;
+  background: linear-gradient(180deg, #73F0FF 0%, #43D5FF 50%, #2F7CFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: ai-glow 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(115, 240, 255, 0.8)) drop-shadow(0 0 20px rgba(67, 213, 255, 0.6));
+  position: relative;
+}
+
+@keyframes ai-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 12px rgba(115, 240, 255, 0.8)) drop-shadow(0 0 20px rgba(67, 213, 255, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(115, 240, 255, 1)) drop-shadow(0 0 30px rgba(67, 213, 255, 0.8));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

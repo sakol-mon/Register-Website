@@ -436,8 +436,8 @@ export default function Home() {
                 className="pointer-events-none absolute left-1/2 top-12 h-44 w-44 -translate-x-1/2 rounded-full bg-[#2F7CFF]/20 blur-3xl"
                 style={{ transform: `translate(calc(-50% + ${parallax.x}px), ${parallax.y}px)` }}
               />
-              <h1 className="relative z-10 font-(family-name:--font-poppins) text-5xl font-extrabold leading-[0.95] tracking-[-0.02em] text-white sm:text-6xl lg:text-7xl">
-                LIBRARY AI LAB
+              <h1 className="relative z-10 font-(family-name:--font-poppins) text-[3.75rem] font-extrabold leading-[0.95] tracking-[-0.02em] text-white sm:text-[4.6875rem] lg:text-[5.625rem]">
+                LIBRARY <span className="ai-text">AI</span> LAB
               </h1>
               <p className="mx-auto mt-7 max-w-3xl text-lg leading-relaxed text-zinc-200 sm:text-xl">
                 ยกระดับทักษะ AI เพื่ออนาคต
@@ -474,10 +474,10 @@ export default function Home() {
               <p className="mb-4 text-sm tracking-[0.18em] text-[#56A6FF]">ABOUT THE WORKSHOP</p>
               <h2 className="font-(family-name:--font-poppins) text-4xl font-bold text-white sm:text-[42px]">ประสบการณ์การเรียนรู้ด้าน AI เชิงวิชาการ</h2>
               <p className="mt-5 text-lg leading-relaxed text-zinc-200">
-                LIBRARY AI LAB เป็นโครงการที่มุ่งเน้นอนาคต ออกแบบโดยหอสมุดมหาวิทยาลัยเพื่อเสริมศักยภาพให้นักศึกษา นักวิจัย และบุคลากรทางการศึกษาได้พัฒนาทักษะปัญญาประดิษฐ์ผ่านการลงมือปฏิบัติจริง แต่ละกิจกรรมผสานเครื่องมือที่ใช้งานได้จริงเข้ากับกรณีศึกษาที่สอดคล้องกับงานวิชาการยุคใหม่
+                LIBRARY AI LAB คือโครงการที่ริเริ่มขึ้นเพื่อยกระดับทักษะด้าน AI สำหรับอนาคต ในยุคที่เทคโนโลยี Generative AI กำลังปรับเปลี่ยนโฉมหน้าของการทำงาน การเรียนรู้ และการวิจัยอย่างไม่เคยเกิดขึ้นมาก่อน หอสมุดและคลังความรู้มหาวิทยาลัยมหิดล ในฐานะศูนย์กลางองค์ความรู้และหน่วยงานสนับสนุนวิชาการของมหาวิทยาลัย จึงมุ่งมั่นเสริมสร้าง AI Literacy ให้เป็นสมรรถนะหลักของบุคลากร นักศึกษา และชุมชนโดยรอบ เพื่อให้ทุกคนสามารถรับมือและปรับตัวต่อการเปลี่ยนแปลงทางเทคโนโลยีได้อย่างมั่นใจ
               </p>
               <p className="mt-5 text-base leading-relaxed text-zinc-300">
-                ผู้เข้าร่วมจะได้เสริมความมั่นใจในการประยุกต์ใช้ AI เพื่อการวิจัย การสังเคราะห์เนื้อหา และการสร้างสรรค์นวัตกรรมดิจิทัล ภายใต้กรอบจริยธรรมและมาตรฐานวิชาชีพที่เหมาะสมกับบริบทของการศึกษาในระดับอุดมศึกษา
+                โครงการนี้เน้นการเรียนรู้ผ่านการฝึกปฏิบัติจริงกับเครื่องมือ AI เฉพาะทาง ครอบคลุมทั้งด้านการบริหารจัดการงาน การจัดการเรียนการสอน การวิจัย และการสร้างสรรค์นวัตกรรม เพื่อให้ผู้เข้าร่วมสามารถนำทักษะไปใช้ได้จริงในบริบทการทำงานของตนเอง อันจะนำไปสู่การยกระดับขีดความสามารถในการแข่งขันในยุคดิจิทัล และส่งเสริมวัฒนธรรมการเรียนรู้ตลอดชีวิตที่เข้าถึงได้และยั่งยืนสำหรับทุกคน
               </p>
             </motion.article>
 
