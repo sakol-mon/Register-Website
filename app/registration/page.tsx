@@ -161,6 +161,7 @@ export default function RegistrationPage() {
                   type="email"
                   name="email"
                   required
+                  title="กรุณาใส่อีเมลที่ถูกต้อง (เช่น name@example.com)"
                   className="focus-ring rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-400"
                   placeholder="name@example.com"
                 />
@@ -171,8 +172,11 @@ export default function RegistrationPage() {
                 <input
                   name="phone"
                   required
+                  type="tel"
+                  pattern="(02[0-9]{7}|0[3457][0-9]{7}|0[689][0-9]{8})( ?(ต่อ|ext\.?|#) ?[0-9]+)?"
+                  title="กรุณาใส่เบอร์โทรที่ถูกต้อง: บ้าน (02xxxxxxx) หรือ (03X-07Xxxxxxxx) หรือมือถือ (06X/08X/09Xxxxxxxxx) เช่น 0812345678 หรือ 0212345678"
                   className="focus-ring rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-400"
-                  placeholder="08x-xxx-xxxx"
+                  placeholder="08xxxxxxxx หรือ 02xxxxxxxx"
                 />
               </label>
 
