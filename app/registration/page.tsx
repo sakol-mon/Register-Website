@@ -12,14 +12,14 @@ function navHref(item: string): string {
 }
 
 const workshopOptions = [
-  "NotebookLM",
-  "Claude",
-  "Gemini",
-  "PRISM",
-  "Antigravity 2.0",
-  "n8n",
-  "Scopus AI / Consensus / Elicit",
-  "Data Analysis with AI",
+  { id: "NotebookLM", title: "ครั้งที่ 1", topic: "NotebookLM", date: "19 สิงหาคม พ.ศ. 2569" },
+  { id: "Claude", title: "ครั้งที่ 2", topic: "Claude", date: "2 กันยายน พ.ศ. 2569" },
+  { id: "Gemini", title: "ครั้งที่ 3", topic: "Gemini", date: "16 กันยายน พ.ศ. 2569" },
+  { id: "PRISM", title: "ครั้งที่ 4", topic: "PRISM", date: "30 กันยายน พ.ศ. 2569" },
+  { id: "Antigravity 2.0", title: "ครั้งที่ 5", topic: "Antigravity 2.0", date: "14 ตุลาคม พ.ศ. 2569" },
+  { id: "n8n", title: "ครั้งที่ 6", topic: "n8n", date: "28 ตุลาคม พ.ศ. 2569" },
+  { id: "Scopus AI", title: "ครั้งที่ 7", topic: "Scopus AI / Consensus / Elicit", date: "11 พฤศจิกายน พ.ศ. 2569" },
+  { id: "Data Analysis", title: "ครั้งที่ 8", topic: "Data Analysis with AI", date: "25 พฤศจิกายน พ.ศ. 2569" },
 ];
 
 export default function RegistrationPage() {
@@ -49,17 +49,17 @@ export default function RegistrationPage() {
     console.log("Registration payload prepared:", Object.fromEntries(formData.entries()));
   };
 
-  const handleTopicToggle = (topic: string, checked: boolean) => {
+  const handleTopicToggle = (topicId: string, checked: boolean) => {
     setSelectedTopics((prev) => {
       if (checked) {
-        if (prev.includes(topic) || prev.length >= 2) {
+        if (prev.includes(topicId) || prev.length >= 2) {
           return prev;
         }
 
-        return [...prev, topic];
+        return [...prev, topicId];
       }
 
-      return prev.filter((item) => item !== topic);
+      return prev.filter((item) => item !== topicId);
     });
   };
 
@@ -215,23 +215,27 @@ export default function RegistrationPage() {
 
             <fieldset className="rounded-2xl border border-white/20 bg-white/8 p-4">
               <legend className="px-2 text-sm font-semibold text-zinc-100">หัวข้อที่สนใจ (เลือกได้ไม่เกิน 2 รายการ)</legend>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {workshopOptions.map((topic) => (
-                  <label key={topic} className="inline-flex items-center gap-2 text-sm text-zinc-200">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {workshopOptions.map((workshop) => (
+                  <label key={workshop.id} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/8 cursor-pointer">
                     <input
                       type="checkbox"
                       name="topics"
-                      value={topic}
-                      checked={selectedTopics.includes(topic)}
-                      disabled={selectedTopics.length >= 2 && !selectedTopics.includes(topic)}
-                      onChange={(event) => handleTopicToggle(topic, event.target.checked)}
-                      className="h-4 w-4 accent-cyan-300 disabled:cursor-not-allowed disabled:opacity-45"
+                      value={workshop.id}
+                      checked={selectedTopics.includes(workshop.id)}
+                      disabled={selectedTopics.length >= 2 && !selectedTopics.includes(workshop.id)}
+                      onChange={(event) => handleTopicToggle(workshop.id, event.target.checked)}
+                      className="mt-0.5 h-4 w-4 flex-shrink-0 accent-cyan-300 disabled:cursor-not-allowed disabled:opacity-45"
                     />
-                    {topic}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-cyan-200">{workshop.title}</p>
+                      <p className="text-sm font-medium text-zinc-100">{workshop.topic}</p>
+                      <p className="text-xs text-zinc-400">📅 {workshop.date}</p>
+                    </div>
                   </label>
                 ))}
               </div>
-              <p className="mt-3 text-xs text-zinc-400">เลือกแล้ว {selectedTopics.length}/2 รายการ</p>
+              <p className="mt-4 text-xs text-zinc-400">เลือกแล้ว {selectedTopics.length}/2 รายการ</p>
             </fieldset>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">

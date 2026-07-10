@@ -139,7 +139,8 @@ function formatCountdown(now: number): CountdownState {
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [countdown, setCountdown] = useState<CountdownState>(() => formatCountdown(Date.now()));
+  const [countdown, setCountdown] = useState<CountdownState>({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: false });
+  const [countdownLoaded, setCountdownLoaded] = useState(false);
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [posterOpen, setPosterOpen] = useState(false);
   const [posterZoom, setPosterZoom] = useState(1);
@@ -156,6 +157,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    setCountdown(formatCountdown(Date.now()));
+    setCountdownLoaded(true);
+
     const id = window.setInterval(() => {
       setCountdown(formatCountdown(Date.now()));
     }, 1000);
@@ -604,10 +608,10 @@ export default function Home() {
                   <p className="mt-4 text-lg text-zinc-200">Reserve your seat for a high-impact learning series focused on practical AI for academic excellence.</p>
                   <div className="mt-6 grid gap-3 sm:grid-cols-4">
                     {[
-                      { label: "Days", value: countdown.days },
-                      { label: "Hours", value: countdown.hours },
-                      { label: "Minutes", value: countdown.minutes },
-                      { label: "Seconds", value: countdown.seconds },
+                      { label: "Days", value: countdownLoaded ? countdown.days : 0 },
+                      { label: "Hours", value: countdownLoaded ? countdown.hours : 0 },
+                      { label: "Minutes", value: countdownLoaded ? countdown.minutes : 0 },
+                      { label: "Seconds", value: countdownLoaded ? countdown.seconds : 0 },
                     ].map((item) => (
                       <div key={item.label} className="rounded-2xl border border-white/20 bg-white/10 p-3 text-center">
                         <p className="text-2xl font-bold text-white">{String(item.value).padStart(2, "0")}</p>
