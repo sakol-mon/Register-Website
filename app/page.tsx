@@ -25,7 +25,7 @@ import speakerImage1 from "@/image/1.png";
 import speakerImage2 from "@/image/2.png";
 import speakerImage3 from "@/image/3.png";
 import speakerImage4 from "@/image/4.png";
-import posterImage from "@/image/poster.png";
+import posterImage from "@/image/poster.jpg";
 import { cn } from "@/lib/utils";
 
 const navLinks = ["Home", "About", "Speakers", "Schedule", "Registration", "Contact"];
@@ -66,14 +66,14 @@ const speakers = [
 ];
 
 const timeline = [
-  { title: "ครั้งที่ 1", topic: "NotebookLM", date: "19 สิงหาคม พ.ศ. 2569", state: "completed" },
-  { title: "ครั้งที่ 2", topic: "Claude", date: "2 กันยายน พ.ศ. 2569", state: "completed" },
-  { title: "ครั้งที่ 3", topic: "Gemini", date: "16 กันยายน พ.ศ. 2569", state: "current" },
-  { title: "ครั้งที่ 4", topic: "prism", date: "30 กันยายน พ.ศ. 2569", state: "upcoming" },
-  { title: "ครั้งที่ 5", topic: "Antigravity 2.0", date: "14 ตุลาคม พ.ศ. 2569", state: "upcoming" },
-  { title: "ครั้งที่ 6", topic: "n8n", date: "28 ตุลาคม พ.ศ. 2569", state: "upcoming" },
-  { title: "ครั้งที่ 7", topic: "AI เพื่อสนับสนุนงานวิชาการ (Scopus AI: Consensus, Elicit)", date: "11 พฤศจิกายน พ.ศ. 2569", state: "upcoming" },
-  { title: "ครั้งที่ 8", topic: "data analysis with ai", date: "25 พฤศจิกายน พ.ศ. 2569", state: "upcoming" },
+  { title: "ครั้งที่ 1", topic: "NotebookLM", date: "19 สิงหาคม พ.ศ. 2569" },
+  { title: "ครั้งที่ 2", topic: "Claude", date: "2 กันยายน พ.ศ. 2569" },
+  { title: "ครั้งที่ 3", topic: "Gemini", date: "16 กันยายน พ.ศ. 2569" },
+  { title: "ครั้งที่ 4", topic: "prism", date: "30 กันยายน พ.ศ. 2569" },
+  { title: "ครั้งที่ 5", topic: "Antigravity 2.0", date: "14 ตุลาคม พ.ศ. 2569" },
+  { title: "ครั้งที่ 6", topic: "n8n", date: "28 ตุลาคม พ.ศ. 2569" },
+  { title: "ครั้งที่ 7", topic: "AI เพื่อสนับสนุนงานวิชาการ (Scopus AI: Consensus, Elicit)", date: "11 พฤศจิกายน พ.ศ. 2569" },
+  { title: "ครั้งที่ 8", topic: "data analysis with ai", date: "25 พฤศจิกายน พ.ศ. 2569" },
 ] as const;
 
 const faq = [
@@ -119,6 +119,58 @@ type CountdownState = {
   seconds: number;
   expired: boolean;
 };
+
+// Thai month mapping
+const thaiMonths: { [key: string]: number } = {
+  มกราคม: 0, กุมภาพันธ์: 1, มีนาคม: 2, เมษายน: 3,
+  พฤษภาคม: 4, มิถุนายน: 5, กรฎฐาคม: 6, สิงหาคม: 7,
+  กันยายน: 8, ตุลาคม: 9, พฤศจิกายน: 10, ธันวาคม: 11,
+};
+
+// Parse Thai date format "DD เดือน พ.ศ. YYYY" to Date
+function parseThaiDate(thaiDateStr: string): Date {
+  const parts = thaiDateStr.split(" ");
+  const day = parseInt(parts[0]);
+  const month = thaiMonths[parts[1]];
+  const buddhYearStr = parts[3];
+  const buddhYear = parseInt(buddhYearStr);
+  const gregorianYear = buddhYear - 543;
+
+  return new Date(gregorianYear, month, day, 9, 0, 0);
+}
+
+// Get timeline item state based on current date (Bangkok timezone)
+function getTimelineItemState(dateStr: string): "completed" | "current" | "upcoming" {
+  // Get current time in Bangkok timezone (UTC+7)
+  const now = new Date();
+  const bangkokTime = new Date(now.getTime() + (7 * 60 * 60 * 1000) - (now.getTimezoneOffset() * 60 * 1000));
+
+  const itemDate = parseThaiDate(dateStr);
+
+  // Start of the day for comparison
+  const startOfDay = new Date(itemDate);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  // End of the day for comparison
+  const endOfDay = new Date(itemDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // Get current time without timezone offset
+  const currentDay = new Date(bangkokTime);
+  currentDay.setHours(bangkokTime.getHours(), bangkokTime.getMinutes(), bangkokTime.getSeconds(), bangkokTime.getMilliseconds());
+
+  // Reset to start of current day for comparison
+  const currentStartOfDay = new Date(currentDay);
+  currentStartOfDay.setHours(0, 0, 0, 0);
+
+  if (currentStartOfDay > endOfDay) {
+    return "completed";
+  } else if (currentStartOfDay.getTime() === startOfDay.getTime()) {
+    return "current";
+  } else {
+    return "upcoming";
+  }
+}
 
 const targetDate = new Date("2026-08-19T09:00:00+07:00");
 function formatCountdown(now: number): CountdownState {
@@ -293,7 +345,7 @@ export default function Home() {
       <header
         className={cn(
           "fixed inset-x-0 top-0 z-50 transition-all duration-300",
-          scrolled ? "bg-[#13072e]/65 backdrop-blur-xl border-b border-white/10" : "bg-transparent",
+          scrolled ? "bg-[#061B4D]/65 backdrop-blur-xl border-b border-white/10" : "bg-transparent",
         )}
       >
         <div className="section-shell flex h-20 items-center justify-between">
@@ -304,7 +356,7 @@ export default function Home() {
             {navLinks.map((item) => (
               <Link
                 key={item}
-                className="focus-ring rounded-full px-2 py-1 text-sm text-zinc-200 transition hover:text-cyan-200"
+                className="focus-ring rounded-full px-2 py-1 text-sm text-zinc-200 transition hover:text-[#56A6FF]"
                 href={navHref(item)}
               >
                 {item}
@@ -376,12 +428,12 @@ export default function Home() {
               transition={{ duration: 0.8, ease: "easeOut" }}
               className="mx-auto max-w-5xl"
             >
-              <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#67e8f9]/40 bg-[#67e8f9]/10 px-4 py-1.5 text-sm text-cyan-100">
+              <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#43D5FF]/40 bg-[#43D5FF]/10 px-4 py-1.5 text-sm text-[#D4E6FF]">
                 <Sparkles size={16} />
                 Academic Innovation Program
               </div>
               <div
-                className="pointer-events-none absolute left-1/2 top-12 h-44 w-44 -translate-x-1/2 rounded-full bg-[#a855f7]/20 blur-3xl"
+                className="pointer-events-none absolute left-1/2 top-12 h-44 w-44 -translate-x-1/2 rounded-full bg-[#2F7CFF]/20 blur-3xl"
                 style={{ transform: `translate(calc(-50% + ${parallax.x}px), ${parallax.y}px)` }}
               />
               <h1 className="relative z-10 font-(family-name:--font-poppins) text-5xl font-extrabold leading-[0.95] tracking-[-0.02em] text-white sm:text-6xl lg:text-7xl">
@@ -395,14 +447,14 @@ export default function Home() {
               <div className="mt-11 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link
                   href="/registration"
-                  className="focus-ring group inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#7c3aed] to-[#38bdf8] px-9 py-4 text-base font-semibold text-white shadow-[0_0_30px_rgba(56,189,248,0.45)] transition duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(56,189,248,0.65)]"
+                  className="focus-ring group inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#2F7CFF] to-[#43D5FF] px-9 py-4 text-base font-semibold text-white shadow-[0_0_30px_rgba(67,213,255,0.5)] transition duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(67,213,255,0.65)]"
                 >
                   Register Now
                   <ChevronRight className="ml-2 size-5 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <a
                   href="#schedule"
-                  className="focus-ring inline-flex items-center justify-center rounded-full border border-white/25 bg-white/10 px-9 py-4 text-base font-semibold text-zinc-100 backdrop-blur-xl transition hover:scale-105 hover:border-cyan-300/60 hover:text-cyan-100"
+                  className="focus-ring inline-flex items-center justify-center rounded-full border border-white/25 bg-white/10 px-9 py-4 text-base font-semibold text-zinc-100 backdrop-blur-xl transition hover:scale-105 hover:border-[#43D5FF]/60 hover:text-[#56A6FF]"
                 >
                   View Schedule
                 </a>
@@ -419,7 +471,7 @@ export default function Home() {
               viewport={{ once: true, amount: 0.4 }}
               transition={{ duration: 0.6 }}
             >
-              <p className="mb-4 text-sm tracking-[0.18em] text-cyan-200">ABOUT THE WORKSHOP</p>
+              <p className="mb-4 text-sm tracking-[0.18em] text-[#56A6FF]">ABOUT THE WORKSHOP</p>
               <h2 className="font-(family-name:--font-poppins) text-4xl font-bold text-white sm:text-[42px]">ประสบการณ์การเรียนรู้ด้าน AI เชิงวิชาการ</h2>
               <p className="mt-5 text-lg leading-relaxed text-zinc-200">
                 LIBRARY AI LAB เป็นโครงการที่มุ่งเน้นอนาคต ออกแบบโดยหอสมุดมหาวิทยาลัยเพื่อเสริมศักยภาพให้นักศึกษา นักวิจัย และบุคลากรทางการศึกษาได้พัฒนาทักษะปัญญาประดิษฐ์ผ่านการลงมือปฏิบัติจริง แต่ละกิจกรรมผสานเครื่องมือที่ใช้งานได้จริงเข้ากับกรณีศึกษาที่สอดคล้องกับงานวิชาการยุคใหม่
@@ -437,7 +489,7 @@ export default function Home() {
               className="glass-card relative p-6 sm:p-8"
               aria-label="Workshop poster"
             >
-              <div className="absolute inset-0 rounded-[24px] bg-gradient-to-br from-cyan-300/10 to-purple-400/12" />
+              <div className="absolute inset-0 rounded-[24px] bg-gradient-to-br from-[#43D5FF]/10 to-[#2F7CFF]/12" />
               <button
                 type="button"
                 className="focus-ring group relative z-10 mx-auto block w-full max-w-[520px] overflow-hidden rounded-2xl border border-white/10 text-left"
@@ -474,7 +526,7 @@ export default function Home() {
                   transition={{ delay: index * 0.07, duration: 0.5 }}
                   whileHover={{ y: -8, scale: 1.02 }}
                 >
-                  <div className="mx-auto aspect-square w-full overflow-hidden rounded-full border border-cyan-200/40 shadow-[0_0_36px_rgba(56,189,248,0.45)]">
+                  <div className="mx-auto aspect-square w-full overflow-hidden rounded-full border border-[#43D5FF]/40 shadow-[0_0_36px_rgba(67,213,255,0.5)]">
                     <Image
                       src={speaker.image}
                       alt={speaker.name}
@@ -485,7 +537,7 @@ export default function Home() {
                   </div>
                   <h3 className="mt-5 min-h-[3.5rem] text-center text-xl font-semibold text-white">{speaker.name}</h3>
                   <p className="mt-2 min-h-[7rem] text-center text-sm leading-relaxed text-zinc-300">{speaker.position}</p>
-                  <div className="mt-3 rounded-2xl border border-cyan-300/20 bg-cyan-300/8 px-4 py-3 text-sm text-cyan-100">
+                  <div className="mt-3 rounded-2xl border border-[#43D5FF]/20 bg-[#43D5FF]/8 px-4 py-3 text-sm text-[#D4E6FF]">
                     <p>Topic: {speaker.topic}</p>
                     <p className="mt-1 text-zinc-300">Date: {speaker.date}</p>
                   </div>
@@ -500,23 +552,24 @@ export default function Home() {
             <h2 className="font-(family-name:--font-poppins) text-center text-4xl font-bold text-white sm:text-[42px]">Program Timeline</h2>
             <div className="mt-12 hidden xl:block">
               <div className="relative">
-                <div className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2 bg-gradient-to-r from-[#f6c453]/80 via-[#38bdf8] to-[#a855f7]/80" />
+                <div className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2 bg-gradient-to-r from-[#2F7CFF]/80 via-[#43D5FF] to-[#56A6FF]/80" />
                 <div className="grid grid-cols-8 gap-4">
                   {timeline.map((item) => {
+                    const state = getTimelineItemState(item.date);
                     const tone =
-                      item.state === "completed"
-                        ? "border-[#f6c453]/70 bg-[#f6c453]/12 text-[#ffd97a]"
-                        : item.state === "current"
-                          ? "border-[#38bdf8]/70 bg-[#38bdf8]/12 text-cyan-100 shadow-[0_0_35px_rgba(56,189,248,0.45)]"
-                          : "border-[#a855f7]/50 bg-[#a855f7]/10 text-zinc-100";
+                      state === "completed"
+                        ? "border-[#00D27A]/70 bg-[#00D27A]/12 text-[#00D27A]"
+                        : state === "current"
+                          ? "border-[#43D5FF]/70 bg-[#43D5FF]/12 text-[#D4E6FF] shadow-[0_0_35px_rgba(67,213,255,0.5)]"
+                          : "border-[#2F7CFF]/50 bg-[#2F7CFF]/10 text-zinc-100";
 
                     return (
                       <div key={item.title} className="relative z-10 text-center">
-                        <div className={cn("mx-auto mb-5 flex h-4 w-4 rounded-full", item.state === "completed" ? "bg-[#f6c453]" : item.state === "current" ? "bg-[#67e8f9] shadow-[0_0_18px_rgba(56,189,248,0.9)]" : "bg-[#a855f7]")} />
-                        <article className={cn("glass-card min-h-[170px] p-4 text-sm", tone)}>
+                        <div className={cn("mx-auto mb-5 flex h-4 w-4 rounded-full", state === "completed" ? "bg-[#00D27A]" : state === "current" ? "bg-[#43D5FF] shadow-[0_0_18px_rgba(67,213,255,0.9)]" : "bg-[#2F7CFF]")} />
+                        <article className={cn("glass-card h-[200px] flex flex-col p-4 text-sm", tone)}>
                           <p className="font-semibold">{item.title}</p>
-                          <p className="mt-2 leading-snug">{item.topic}</p>
-                          <p className="mt-4 text-xs uppercase tracking-wide text-zinc-300">{item.date}</p>
+                          <p className="mt-2 leading-snug flex-1 line-clamp-4">{item.topic}</p>
+                          <p className="text-xs uppercase tracking-wide text-zinc-300 mt-auto">{item.date}</p>
                         </article>
                       </div>
                     );
@@ -526,17 +579,20 @@ export default function Home() {
             </div>
 
             <div className="mt-10 xl:hidden">
-              <div className="relative ml-4 border-l border-cyan-200/30 pl-8">
-                {timeline.map((item) => (
-                  <article key={item.title} className="relative mb-6">
-                    <span className={cn("absolute -left-[42px] top-8 h-4 w-4 rounded-full", item.state === "completed" ? "bg-[#f6c453]" : item.state === "current" ? "bg-[#67e8f9] shadow-[0_0_18px_rgba(56,189,248,0.9)]" : "bg-[#a855f7]")} />
-                    <div className="glass-card p-5">
-                      <p className="text-sm font-semibold text-zinc-100">{item.title}</p>
-                      <p className="mt-1 text-base text-white">{item.topic}</p>
-                      <p className="mt-2 text-xs tracking-wide text-zinc-300">{item.date}</p>
-                    </div>
-                  </article>
-                ))}
+              <div className="relative ml-4 border-l border-[#2F65D8]/30 pl-8">
+                {timeline.map((item) => {
+                  const state = getTimelineItemState(item.date);
+                  return (
+                    <article key={item.title} className="relative mb-6">
+                      <span className={cn("absolute -left-[42px] top-8 h-4 w-4 rounded-full", state === "completed" ? "bg-[#00D27A]" : state === "current" ? "bg-[#43D5FF] shadow-[0_0_18px_rgba(67,213,255,0.9)]" : "bg-[#2F7CFF]")} />
+                      <div className="glass-card p-5 flex flex-col h-[180px]">
+                        <p className="text-sm font-semibold text-zinc-100">{item.title}</p>
+                        <p className="mt-1 text-base text-white flex-1 line-clamp-3">{item.topic}</p>
+                        <p className="text-xs tracking-wide text-zinc-300 mt-auto">{item.date}</p>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -546,7 +602,7 @@ export default function Home() {
           <div className="section-shell grid gap-6 md:grid-cols-3">
             {eventCards.map((card) => (
               <article key={card.title} className="glass-card p-6">
-                <card.icon className="h-7 w-7 text-cyan-300" />
+                <card.icon className="h-7 w-7 text-[#43D5FF]" />
                 <h3 className="mt-4 text-xl font-semibold text-white">{card.title}</h3>
                 <p className="mt-3 text-zinc-200">{card.value}</p>
               </article>
@@ -568,8 +624,8 @@ export default function Home() {
                   transition={{ delay: index * 0.05, duration: 0.45 }}
                   viewport={{ once: true, amount: 0.35 }}
                 >
-                  <div className="rounded-2xl bg-cyan-300/15 p-3 shadow-[0_0_25px_rgba(56,189,248,0.3)]">
-                    <benefit.icon className="h-6 w-6 text-cyan-200" />
+                  <div className="rounded-2xl bg-[#43D5FF]/15 p-3 shadow-[0_0_25px_rgba(67,213,255,0.3)]">
+                    <benefit.icon className="h-6 w-6 text-[#56A6FF]" />
                   </div>
                   <p className="text-lg text-zinc-100">{benefit.label}</p>
                 </motion.article>
@@ -586,8 +642,8 @@ export default function Home() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, amount: 0.4 }}
             >
-              <div className="absolute -right-10 -top-14 h-56 w-56 rounded-full bg-cyan-300/20 blur-3xl" aria-hidden="true" />
-              <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-purple-500/30 blur-3xl" aria-hidden="true" />
+              <div className="absolute -right-10 -top-14 h-56 w-56 rounded-full bg-[#43D5FF]/20 blur-3xl" aria-hidden="true" />
+              <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-[#2F7CFF]/30 blur-3xl" aria-hidden="true" />
               <div className="relative z-10 grid gap-8 lg:grid-cols-[220px_1fr] lg:items-center">
                 <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-3xl border border-white/20 bg-black/25 p-5">
                   <div className="grid h-full w-full grid-cols-7 grid-rows-7 gap-1.5 rounded-2xl bg-white p-3">
@@ -603,7 +659,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm tracking-[0.18em] text-cyan-200">REGISTRATION OPEN</p>
+                  <p className="text-sm tracking-[0.18em] text-[#56A6FF]">REGISTRATION OPEN</p>
                   <h2 className="mt-3 font-(family-name:--font-poppins) text-4xl font-bold text-white sm:text-[42px]">Join LIBRARY AI LAB</h2>
                   <p className="mt-4 text-lg text-zinc-200">Reserve your seat for a high-impact learning series focused on practical AI for academic excellence.</p>
                   <div className="mt-6 grid gap-3 sm:grid-cols-4">
@@ -624,7 +680,7 @@ export default function Home() {
                   </p>
                   <Link
                     href="/registration"
-                    className="focus-ring mt-6 inline-flex items-center rounded-full bg-gradient-to-r from-[#7c3aed] to-[#38bdf8] px-8 py-4 font-semibold text-white shadow-[0_0_30px_rgba(56,189,248,0.45)] transition hover:scale-105 hover:shadow-[0_0_38px_rgba(56,189,248,0.6)]"
+                    className="focus-ring mt-6 inline-flex items-center rounded-full bg-gradient-to-r from-[#2F7CFF] to-[#43D5FF] px-8 py-4 font-semibold text-white shadow-[0_0_30px_rgba(67,213,255,0.5)] transition hover:scale-105 hover:shadow-[0_0_38px_rgba(67,213,255,0.65)]"
                     aria-label="Open registration form"
                   >
                     Register Now
@@ -735,7 +791,7 @@ export default function Home() {
       <footer id="contact" className="border-t border-white/10 bg-black/35 py-12">
         <div className="section-shell grid gap-10 md:grid-cols-2">
           <div>
-            <p className="text-sm tracking-[0.2em] text-cyan-200">สอบถามรายละเอียดเพิ่มเติม</p>
+            <p className="text-sm tracking-[0.2em] text-[#56A6FF]\">สอบถามรายละเอียดเพิ่มเติม</p>
             <p className="mt-3 text-zinc-300">นายศกล มงคลเนตร์</p>
             <p className="mt-1 text-zinc-300">หอสมุดและคลังความรู้มหาวิทยาลัยมหิดล</p>
             <p className="mt-4 text-zinc-300">สำนักงาน: 0-2800-2680-9 ต่อ 4224</p>

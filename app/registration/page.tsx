@@ -68,7 +68,7 @@ export default function RegistrationPage() {
       <header
         className={[
           "fixed inset-x-0 top-0 z-50 transition-all duration-300",
-          scrolled ? "bg-[#13072e]/65 backdrop-blur-xl border-b border-white/10" : "bg-transparent",
+          scrolled ? "bg-[#061B4D]/65 backdrop-blur-xl border-b border-white/10" : "bg-transparent",
         ].join(" ")}
       >
         <div className="section-shell flex h-20 items-center justify-between">
@@ -80,7 +80,7 @@ export default function RegistrationPage() {
             {navLinks.map((item) => (
               <Link
                 key={item}
-                className="focus-ring rounded-full px-2 py-1 text-sm text-zinc-200 transition hover:text-cyan-200"
+                className="focus-ring rounded-full px-2 py-1 text-sm text-zinc-200 transition hover:text-[#56A6FF]"
                 href={navHref(item)}
               >
                 {item}
@@ -131,13 +131,13 @@ export default function RegistrationPage() {
         >
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-sm tracking-[0.2em] text-cyan-200">REGISTRATION FORM</p>
+              <p className="text-sm tracking-[0.2em] text-[#56A6FF]">REGISTRATION FORM</p>
               <h1 className="mt-2 font-(family-name:--font-poppins) text-3xl font-bold text-white sm:text-4xl">แบบฟอร์มรับสมัคร LIBRARY AI LAB</h1>
               <p className="mt-3 max-w-2xl text-zinc-300">กรอกข้อมูลเพื่อแสดงความประสงค์เข้าร่วมกิจกรรม ข้อมูลยังไม่ถูกบันทึกลงฐานข้อมูลจริงในขณะนี้</p>
             </div>
             <Link
               href="/"
-              className="focus-ring inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-5 py-2 text-sm font-semibold text-zinc-100 transition hover:border-cyan-300/50 hover:text-cyan-100"
+              className="focus-ring inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-5 py-2 text-sm font-semibold text-zinc-100 transition hover:border-[#43D5FF]/50 hover:text-[#56A6FF]"
             >
               กลับหน้าแรก
             </Link>
@@ -229,10 +229,10 @@ export default function RegistrationPage() {
                       checked={selectedTopics.includes(workshop.id)}
                       disabled={selectedTopics.length >= 2 && !selectedTopics.includes(workshop.id)}
                       onChange={(event) => handleTopicToggle(workshop.id, event.target.checked)}
-                      className="mt-0.5 h-4 w-4 flex-shrink-0 accent-cyan-300 disabled:cursor-not-allowed disabled:opacity-45"
+                      className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#43D5FF] disabled:cursor-not-allowed disabled:opacity-45"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-cyan-200">{workshop.title}</p>
+                      <p className="text-xs font-semibold text-[#56A6FF]">{workshop.title}</p>
                       <p className="text-sm font-medium text-zinc-100">{workshop.topic}</p>
                       <p className="text-xs text-zinc-400">📅 {workshop.date}</p>
                     </div>
@@ -245,7 +245,7 @@ export default function RegistrationPage() {
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <button
                 type="submit"
-                className="focus-ring inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#7c3aed] to-[#38bdf8] px-7 py-3 font-semibold text-white shadow-[0_0_30px_rgba(56,189,248,0.45)] transition hover:scale-105 hover:shadow-[0_0_38px_rgba(56,189,248,0.65)]"
+                className="focus-ring inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#2F7CFF] to-[#43D5FF] px-7 py-3 font-semibold text-white shadow-[0_0_30px_rgba(67,213,255,0.5)] transition hover:scale-105 hover:shadow-[0_0_38px_rgba(67,213,255,0.65)]"
               >
                 ส่งข้อมูลสมัคร
               </button>
@@ -258,7 +258,7 @@ export default function RegistrationPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
-              className="mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-4 text-cyan-100"
+              className="mt-6 rounded-2xl border border-[#43D5FF]/30 bg-[#43D5FF]/10 p-4 text-[#D4E6FF]"
             >
               รับข้อมูลแบบฟอร์มเรียบร้อยแล้ว{previewName ? `: ${previewName}` : ""} (โหมดจำลอง)
             </motion.div>
