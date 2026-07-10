@@ -72,7 +72,7 @@ const timeline = [
   { title: "ครั้งที่ 4", topic: "AI for Research", date: "30 กันยายน พ.ศ. 2569" },
   { title: "ครั้งที่ 5", topic: "Antigravity 2.0", date: "14 ตุลาคม พ.ศ. 2569" },
   { title: "ครั้งที่ 6", topic: "n8n", date: "28 ตุลาคม พ.ศ. 2569" },
-  { title: "ครั้งที่ 7", topic: "AI เพื่อสนับสนุนงานวิชาการ (Scopus AI: Consensus, Elicit)", date: "11 พฤศจิกายน พ.ศ. 2569" },
+  { title: "ครั้งที่ 7", topic: "AI เพื่อสนับสนุนงานวิชาการ (Scopus AI & Consensus & Elicit)", date: "11 พฤศจิกายน พ.ศ. 2569" },
   { title: "ครั้งที่ 8", topic: "data analysis with ai", date: "25 พฤศจิกายน พ.ศ. 2569" },
 ] as const;
 
