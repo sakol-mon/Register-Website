@@ -15,7 +15,7 @@ const workshopOptions = [
   { id: "NotebookLM", title: "ครั้งที่ 1", topic: "NotebookLM", date: "19 สิงหาคม พ.ศ. 2569" },
   { id: "Claude", title: "ครั้งที่ 2", topic: "Claude", date: "2 กันยายน พ.ศ. 2569" },
   { id: "Gemini", title: "ครั้งที่ 3", topic: "Gemini", date: "16 กันยายน พ.ศ. 2569" },
-  { id: "PRISM", title: "ครั้งที่ 4", topic: "PRISM", date: "30 กันยายน พ.ศ. 2569" },
+  { id: "AI for Research", title: "ครั้งที่ 4", topic: "AI for Research", date: "30 กันยายน พ.ศ. 2569" },
   { id: "Antigravity 2.0", title: "ครั้งที่ 5", topic: "Antigravity 2.0", date: "14 ตุลาคม พ.ศ. 2569" },
   { id: "n8n", title: "ครั้งที่ 6", topic: "n8n", date: "28 ตุลาคม พ.ศ. 2569" },
   { id: "Scopus AI", title: "ครั้งที่ 7", topic: "Scopus AI / Consensus / Elicit", date: "11 พฤศจิกายน พ.ศ. 2569" },
