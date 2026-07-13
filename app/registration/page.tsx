@@ -5,6 +5,8 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+
 const navLinks = ["Home", "About", "Speakers", "Schedule", "Registration", "Contact"];
 
 function navHref(item: string): string {
@@ -22,10 +24,29 @@ const workshopOptions = [
   { id: "Data Analysis", title: "ครั้งที่ 8", topic: "Data Analysis with AI", date: "25 พฤศจิกายน พ.ศ. 2569" },
 ];
 
+const strictEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim().length > 0) {
+      return message;
+    }
+  }
+
+  return "Unable to submit registration";
+}
+
 export default function RegistrationPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [previewName, setPreviewName] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
 
@@ -36,17 +57,80 @@ export default function RegistrationPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const formData = new FormData(event.currentTarget);
-    const fullName = String(formData.get("fullName") ?? "");
+    const formElement = event.currentTarget;
+    const formData = new FormData(formElement);
+    const fullName = String(formData.get("fullName") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
+    const phone = String(formData.get("phone") ?? "").trim();
+    const organization = String(formData.get("organization") ?? "").trim();
+    const role = String(formData.get("role") ?? "").trim();
 
-    setPreviewName(fullName);
-    setSubmitted(true);
+    if (!strictEmailRegex.test(email)) {
+      setSubmitted(false);
+      setSubmitError("รูปแบบอีเมลไม่ถูกต้อง ต้องเป็นรูปแบบ name@example.com");
+      return;
+    }
 
-    // TODO: connect this payload to API/database when backend is ready.
-    console.log("Registration payload prepared:", Object.fromEntries(formData.entries()));
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const registrationId = crypto.randomUUID();
+
+      const { error: registrationError } = await supabase
+        .from("registrations")
+        .insert({
+          id: registrationId,
+          full_name: fullName,
+          email,
+          phone,
+          organization,
+          role,
+        });
+
+      if (registrationError) {
+        throw registrationError;
+      }
+
+      if (selectedTopics.length > 0) {
+        const { data: workshops, error: workshopsError } = await supabase
+          .from("workshops")
+          .select("id, code")
+          .in("code", selectedTopics);
+
+        if (workshopsError) {
+          throw workshopsError;
+        }
+
+        if (!workshops || workshops.length !== selectedTopics.length) {
+          throw new Error("Selected workshop topics are not available in database");
+        }
+
+        const topicRows = workshops.map((workshop) => ({
+          registration_id: registrationId,
+          workshop_id: workshop.id,
+        }));
+
+        const { error: topicInsertError } = await supabase.from("registration_topics").insert(topicRows);
+        if (topicInsertError) {
+          throw topicInsertError;
+        }
+      }
+
+      setPreviewName(fullName);
+      setSubmitted(true);
+      setSelectedTopics([]);
+      formElement.reset();
+    } catch (error) {
+      setSubmitted(false);
+      setSubmitError(getErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleTopicToggle = (topicId: string, checked: boolean) => {
@@ -133,7 +217,7 @@ export default function RegistrationPage() {
             <div>
               <p className="text-sm tracking-[0.2em] text-[#56A6FF]">REGISTRATION FORM</p>
               <h1 className="mt-2 font-(family-name:--font-poppins) text-3xl font-bold text-white sm:text-4xl">แบบฟอร์มรับสมัคร LIBRARY AI LAB</h1>
-              <p className="mt-3 max-w-2xl text-zinc-300">กรอกข้อมูลเพื่อแสดงความประสงค์เข้าร่วมกิจกรรม ข้อมูลยังไม่ถูกบันทึกลงฐานข้อมูลจริงในขณะนี้</p>
+              <p className="mt-3 max-w-2xl text-zinc-300">กรอกข้อมูลเพื่อแสดงความประสงค์เข้าร่วมกิจกรรม ข้อมูลจะถูกบันทึกลงระบบเมื่อส่งแบบฟอร์มสำเร็จ</p>
             </div>
             <Link
               href="/"
@@ -161,6 +245,8 @@ export default function RegistrationPage() {
                   type="email"
                   name="email"
                   required
+                  autoComplete="email"
+                  pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$"
                   title="กรุณาใส่อีเมลที่ถูกต้อง (เช่น name@example.com)"
                   className="focus-ring rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-400"
                   placeholder="name@example.com"
@@ -245,12 +331,15 @@ export default function RegistrationPage() {
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="focus-ring inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#2F7CFF] to-[#43D5FF] px-7 py-3 font-semibold text-white shadow-[0_0_30px_rgba(67,213,255,0.5)] transition hover:scale-105 hover:shadow-[0_0_38px_rgba(67,213,255,0.65)]"
               >
-                ส่งข้อมูลสมัคร
+                {isSubmitting ? "กำลังส่งข้อมูล..." : "ส่งข้อมูลสมัคร"}
               </button>
-              <p className="text-xs text-zinc-400">สถานะตอนนี้: โหมดเตรียมระบบ (ยังไม่บันทึกลงฐานข้อมูลจริง)</p>
+              <p className="text-xs text-zinc-400">สถานะตอนนี้: เชื่อมต่อ Supabase แล้ว ข้อมูลจะถูกบันทึกเมื่อส่งแบบฟอร์มสำเร็จ</p>
             </div>
+
+            {submitError && <p className="text-sm text-red-300">เกิดข้อผิดพลาด: {submitError}</p>}
           </form>
 
           {submitted && (
