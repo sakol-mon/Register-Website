@@ -99,6 +99,10 @@ export default function AttendeesPage() {
         setErrorMessage("");
 
         const supabase = getSupabaseBrowserClient();
+        if (!supabase) {
+          throw new Error("ระบบยังไม่พร้อมใช้งาน: ยังไม่ได้ตั้งค่า Supabase Environment Variables");
+        }
+
         const registrationsPromise = supabase.from("registrations").select("id, full_name, organization, role").order("full_name", { ascending: true });
         const registrationTopicsPromise = supabase.from("registration_topics").select("registration_id, workshop_id");
         const workshopsPromise = supabase.from("workshops").select("id, code, topic_name, title");

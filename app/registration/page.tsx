@@ -111,11 +111,17 @@ export default function RegistrationPage() {
       return;
     }
 
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      setSubmitted(false);
+      setSubmitError("ระบบยังไม่พร้อมใช้งาน: ยังไม่ได้ตั้งค่า Supabase Environment Variables");
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError("");
 
     try {
-      const supabase = getSupabaseBrowserClient();
       const registrationId = crypto.randomUUID();
 
       const { error: registrationError } = await supabase
