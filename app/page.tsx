@@ -28,10 +28,18 @@ import speakerImage4 from "@/image/4.png";
 import posterImage from "@/image/poster.jpg";
 import { cn } from "@/lib/utils";
 
-const navLinks = ["Home", "About", "Speakers", "Schedule", "Registration", "Contact"];
+const navLinks = ["Home", "About", "Speakers", "Schedule", "Registration", "รายชื่อผู้เข้าอบรม", "Contact"];
 
 function navHref(item: string): string {
-  return item === "Registration" ? "/registration" : `#${item.toLowerCase()}`;
+  if (item === "Registration") {
+    return "/registration";
+  }
+
+  if (item === "รายชื่อผู้เข้าอบรม") {
+    return "/attendees";
+  }
+
+  return `#${item.toLowerCase()}`;
 }
 
 const speakers = [
@@ -60,7 +68,7 @@ const speakers = [
     image: speakerImage4,
     name: "ผศ. ดร.ทวีศักดิ์ สมานชื่น",
     position: "รองผู้อำนวยการฝ่ายเทคโนโลยีดิจิทัล หอสมุดและคลังความรู้มหาวิทยาลัยมหิดล",
-    topic: "AI for Research",
+    topic: "Prism",
     date: "30 กันยายน 2569",
   },
 ];
@@ -69,7 +77,7 @@ const timeline = [
   { title: "ครั้งที่ 1", topic: "NotebookLM", date: "19 สิงหาคม พ.ศ. 2569" },
   { title: "ครั้งที่ 2", topic: "Claude", date: "2 กันยายน พ.ศ. 2569" },
   { title: "ครั้งที่ 3", topic: "Gemini", date: "16 กันยายน พ.ศ. 2569" },
-  { title: "ครั้งที่ 4", topic: "AI for Research", date: "30 กันยายน พ.ศ. 2569" },
+  { title: "ครั้งที่ 4", topic: "Prism", date: "30 กันยายน พ.ศ. 2569" },
   { title: "ครั้งที่ 5", topic: "Antigravity 2.0", date: "14 ตุลาคม พ.ศ. 2569" },
   { title: "ครั้งที่ 6", topic: "n8n", date: "28 ตุลาคม พ.ศ. 2569" },
   { title: "ครั้งที่ 7", topic: "AI เพื่อสนับสนุนงานวิชาการ (Scopus AI & Consensus & Elicit)", date: "11 พฤศจิกายน พ.ศ. 2569" },
@@ -209,14 +217,19 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    setCountdown(formatCountdown(Date.now()));
-    setCountdownLoaded(true);
+    const initializeId = window.setTimeout(() => {
+      setCountdown(formatCountdown(Date.now()));
+      setCountdownLoaded(true);
+    }, 0);
 
     const id = window.setInterval(() => {
       setCountdown(formatCountdown(Date.now()));
     }, 1000);
 
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearTimeout(initializeId);
+      window.clearInterval(id);
+    };
   }, []);
 
   useEffect(() => {

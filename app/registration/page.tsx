@@ -7,17 +7,29 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-const navLinks = ["Home", "About", "Speakers", "Schedule", "Registration", "Contact"];
+const navLinks = ["Home", "About", "Speakers", "Schedule", "Registration", "รายชื่อผู้เข้าอบรม", "Contact"];
 
 function navHref(item: string): string {
-  return item === "Home" ? "/" : `/#${item.toLowerCase()}`;
+  if (item === "Home") {
+    return "/";
+  }
+
+  if (item === "Registration") {
+    return "/registration";
+  }
+
+  if (item === "รายชื่อผู้เข้าอบรม") {
+    return "/attendees";
+  }
+
+  return `/#${item.toLowerCase()}`;
 }
 
 const workshopOptions = [
   { id: "NotebookLM", title: "ครั้งที่ 1", topic: "NotebookLM", date: "19 สิงหาคม พ.ศ. 2569" },
   { id: "Claude", title: "ครั้งที่ 2", topic: "Claude", date: "2 กันยายน พ.ศ. 2569" },
   { id: "Gemini", title: "ครั้งที่ 3", topic: "Gemini", date: "16 กันยายน พ.ศ. 2569" },
-  { id: "AI for Research", title: "ครั้งที่ 4", topic: "AI for Research", date: "30 กันยายน พ.ศ. 2569" },
+  { id: "AI for Research", title: "ครั้งที่ 4", topic: "Prism", date: "30 กันยายน พ.ศ. 2569" },
   { id: "Antigravity 2.0", title: "ครั้งที่ 5", topic: "Antigravity 2.0", date: "14 ตุลาคม พ.ศ. 2569" },
   { id: "n8n", title: "ครั้งที่ 6", topic: "n8n", date: "28 ตุลาคม พ.ศ. 2569" },
   { id: "Scopus AI", title: "ครั้งที่ 7", topic: "Scopus AI & Consensus & Elicit", date: "11 พฤศจิกายน พ.ศ. 2569" },
@@ -49,6 +61,9 @@ export default function RegistrationPage() {
   const [submitError, setSubmitError] = useState("");
   const [previewName, setPreviewName] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [selectedRole, setSelectedRole] = useState("");
+
+  const organizationRequired = selectedRole === "student" || selectedRole === "staff";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 18);
@@ -67,10 +82,32 @@ export default function RegistrationPage() {
     const phone = String(formData.get("phone") ?? "").trim();
     const organization = String(formData.get("organization") ?? "").trim();
     const role = String(formData.get("role") ?? "").trim();
+    const selectedTopicCodes = formData
+      .getAll("topics")
+      .map((value) => String(value).trim())
+      .filter((value) => value.length > 0);
 
     if (!strictEmailRegex.test(email)) {
       setSubmitted(false);
       setSubmitError("รูปแบบอีเมลไม่ถูกต้อง ต้องเป็นรูปแบบ name@example.com");
+      return;
+    }
+
+    if ((role === "student" || role === "staff") && !organization) {
+      setSubmitted(false);
+      setSubmitError("กรุณาระบุหน่วยงาน/คณะสำหรับนักศึกษาและบุคลากร");
+      return;
+    }
+
+    if (selectedTopicCodes.length === 0) {
+      setSubmitted(false);
+      setSubmitError("กรุณาเลือกหัวข้อที่สนใจอย่างน้อย 1 รายการ");
+      return;
+    }
+
+    if (selectedTopicCodes.length > 2) {
+      setSubmitted(false);
+      setSubmitError("เลือกหัวข้อที่สนใจได้ไม่เกิน 2 รายการ");
       return;
     }
 
@@ -96,17 +133,17 @@ export default function RegistrationPage() {
         throw registrationError;
       }
 
-      if (selectedTopics.length > 0) {
+      if (selectedTopicCodes.length > 0) {
         const { data: workshops, error: workshopsError } = await supabase
           .from("workshops")
           .select("id, code")
-          .in("code", selectedTopics);
+          .in("code", selectedTopicCodes);
 
         if (workshopsError) {
           throw workshopsError;
         }
 
-        if (!workshops || workshops.length !== selectedTopics.length) {
+        if (!workshops || workshops.length !== selectedTopicCodes.length) {
           throw new Error("Selected workshop topics are not available in database");
         }
 
@@ -124,6 +161,7 @@ export default function RegistrationPage() {
       setPreviewName(fullName);
       setSubmitted(true);
       setSelectedTopics([]);
+      setSelectedRole("");
       formElement.reset();
     } catch (error) {
       setSubmitted(false);
@@ -133,10 +171,15 @@ export default function RegistrationPage() {
     }
   };
 
-  const handleTopicToggle = (topicId: string, checked: boolean) => {
+  const handleTopicToggle = (topicId: string, checked: boolean, input: HTMLInputElement) => {
     setSelectedTopics((prev) => {
       if (checked) {
-        if (prev.includes(topicId) || prev.length >= 2) {
+        if (prev.includes(topicId)) {
+          return prev;
+        }
+
+        if (prev.length >= 2) {
+          input.checked = false;
           return prev;
         }
 
@@ -260,17 +303,19 @@ export default function RegistrationPage() {
                   required
                   type="tel"
                   pattern="(02[0-9]{7}|0[3457][0-9]{7}|0[689][0-9]{8})( ?(ต่อ|ext\.?|#) ?[0-9]+)?"
-                  title="กรุณาใส่เบอร์โทรที่ถูกต้อง: บ้าน (02xxxxxxx) หรือ (03X-07Xxxxxxxx) หรือมือถือ (06X/08X/09Xxxxxxxxx) เช่น 0812345678 หรือ 0212345678"
+                  title="กรุณาใส่เบอร์โทรที่ถูกต้อง: บ้าน (02xxxxxxx) หรือ (03X-07Xxxxxxxx) หรือมือถือ (06X/08X/09Xxxxxxxxx) เช่น 0812345678"
                   className="focus-ring rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-400"
-                  placeholder="08xxxxxxxx หรือ 02xxxxxxxx"
+                  placeholder="08xxxxxxxx"
                 />
               </label>
 
               <label className="grid gap-2">
-                <span className="text-sm font-semibold text-zinc-100">หน่วยงาน/คณะ</span>
+                <span className="text-sm font-semibold text-zinc-100">
+                  หน่วยงาน/คณะ {organizationRequired ? <span className="text-[#56A6FF]">*</span> : null}
+                </span>
                 <input
                   name="organization"
-                  required
+                  required={organizationRequired}
                   className="focus-ring rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-zinc-100 placeholder:text-zinc-400"
                   placeholder="ระบุหน่วยงานหรือคณะ"
                 />
@@ -282,7 +327,8 @@ export default function RegistrationPage() {
               <select
                 name="role"
                 required
-                defaultValue=""
+                value={selectedRole}
+                onChange={(event) => setSelectedRole(event.target.value)}
                 className="focus-ring rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-zinc-100"
               >
                 <option value="" disabled className="text-black">
@@ -312,10 +358,8 @@ export default function RegistrationPage() {
                       type="checkbox"
                       name="topics"
                       value={workshop.id}
-                      checked={selectedTopics.includes(workshop.id)}
-                      disabled={selectedTopics.length >= 2 && !selectedTopics.includes(workshop.id)}
-                      onChange={(event) => handleTopicToggle(workshop.id, event.target.checked)}
-                      className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#43D5FF] disabled:cursor-not-allowed disabled:opacity-45"
+                      onChange={(event) => handleTopicToggle(workshop.id, event.target.checked, event.currentTarget)}
+                      className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#43D5FF]"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold text-[#56A6FF]">{workshop.title}</p>

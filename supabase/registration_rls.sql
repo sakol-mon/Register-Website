@@ -38,7 +38,7 @@ values
   ('NotebookLM',      'ครั้งที่ 1', 'NotebookLM',                     '2026-08-19'),
   ('Claude',          'ครั้งที่ 2', 'Claude',                         '2026-09-02'),
   ('Gemini',          'ครั้งที่ 3', 'Gemini',                         '2026-09-16'),
-  ('AI for Research', 'ครั้งที่ 4', 'AI for Research',                '2026-09-30'),
+  ('AI for Research', 'ครั้งที่ 4', 'Prism',                          '2026-09-30'),
   ('Antigravity 2.0', 'ครั้งที่ 5', 'Antigravity 2.0',                '2026-10-14'),
   ('n8n',             'ครั้งที่ 6', 'n8n',                            '2026-10-28'),
   ('Scopus AI',       'ครั้งที่ 7', 'Scopus AI & Consensus & Elicit', '2026-11-11'),
