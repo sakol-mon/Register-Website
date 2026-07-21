@@ -16,6 +16,17 @@ If GitHub Pages is showing the repository README instead of the website, the Pag
 - Preferred: set `Settings > Pages > Source` to `GitHub Actions`.
 - Fallback: set `Settings > Pages > Source` to `Deploy from a branch`, branch `main`, folder `/docs`.
 
+### Required Supabase Variables For GitHub Actions
+
+GitHub Pages builds this site in CI, so browser env vars must be provided in repository secrets.
+
+Add these in `Settings > Secrets and variables > Actions > Repository secrets`:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+If either value is missing, the workflow now fails early with a clear error instead of deploying a broken build.
+
 ## Getting Started
 
 First, run the development server:
