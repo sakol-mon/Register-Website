@@ -4,17 +4,22 @@ const isGitHubPages = process.env.GITHUB_ACTIONS === "true";
 const repoName = "Register-Website";
 
 const nextConfig: NextConfig = {
-  output: "export",
-  trailingSlash: true,
-  images: {
-    unoptimized: true,
-  },
   ...(isGitHubPages
     ? {
+        output: "export",
         basePath: `/${repoName}`,
         assetPrefix: `/${repoName}/`,
+        trailingSlash: true,
+        images: {
+          unoptimized: true,
+        },
       }
-    : {}),
+    : {
+        // สำหรับ Docker / Development / Production Server
+        images: {
+          unoptimized: false,
+        },
+      }),
 };
 
 export default nextConfig;

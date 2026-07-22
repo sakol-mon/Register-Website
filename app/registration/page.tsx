@@ -122,6 +122,19 @@ export default function RegistrationPage() {
     setSubmitError("");
 
     try {
+      const { data: workshops, error: workshopsError } = await supabase
+        .from("workshops")
+        .select("id, code")
+        .in("code", selectedTopicCodes);
+
+      if (workshopsError) {
+        throw workshopsError;
+      }
+
+      if (!workshops || workshops.length !== selectedTopicCodes.length) {
+        throw new Error("ไม่พบข้อมูลหัวข้ออบรมในฐานข้อมูล กรุณา seed ตาราง workshops ก่อนใช้งาน");
+      }
+
       const registrationId = crypto.randomUUID();
 
       const { error: registrationError } = await supabase
@@ -139,29 +152,14 @@ export default function RegistrationPage() {
         throw registrationError;
       }
 
-      if (selectedTopicCodes.length > 0) {
-        const { data: workshops, error: workshopsError } = await supabase
-          .from("workshops")
-          .select("id, code")
-          .in("code", selectedTopicCodes);
+      const topicRows = workshops.map((workshop) => ({
+        registration_id: registrationId,
+        workshop_id: workshop.id,
+      }));
 
-        if (workshopsError) {
-          throw workshopsError;
-        }
-
-        if (!workshops || workshops.length !== selectedTopicCodes.length) {
-          throw new Error("Selected workshop topics are not available in database");
-        }
-
-        const topicRows = workshops.map((workshop) => ({
-          registration_id: registrationId,
-          workshop_id: workshop.id,
-        }));
-
-        const { error: topicInsertError } = await supabase.from("registration_topics").insert(topicRows);
-        if (topicInsertError) {
-          throw topicInsertError;
-        }
+      const { error: topicInsertError } = await supabase.from("registration_topics").insert(topicRows);
+      if (topicInsertError) {
+        throw topicInsertError;
       }
 
       setPreviewName(fullName);
