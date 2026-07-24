@@ -3,8 +3,8 @@ self.__BUILD_MANIFEST = {
     "afterFiles": [],
     "beforeFiles": [
       {
-        "source": "/Register-Website//_next/:path+",
-        "destination": "/Register-Website/_next/:path+"
+        "source": "/libraryailab//_next/:path+",
+        "destination": "/libraryailab/_next/:path+"
       }
     ],
     "fallback": []

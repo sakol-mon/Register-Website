@@ -415,9 +415,8 @@ export default function RegistrationPage() {
                 disabled={isSubmitting}
                 className="focus-ring inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#2F7CFF] to-[#43D5FF] px-7 py-3 font-semibold text-white shadow-[0_0_30px_rgba(67,213,255,0.5)] transition hover:scale-105 hover:shadow-[0_0_38px_rgba(67,213,255,0.65)]"
               >
-                {isSubmitting ? "กำลังส่งข้อมูล..." : "ส่งข้อมูลสมัคร"}
+                {isSubmitting ? "ระบบกำลังบันทึกข้อมูลการสมัคร" : "ส่งข้อมูลสมัคร"}
               </button>
-              <p className="text-xs text-zinc-400">สถานะตอนนี้: เชื่อมต่อ Supabase แล้ว ข้อมูลจะถูกบันทึกเมื่อส่งแบบฟอร์มสำเร็จ</p>
             </div>
 
             {submitError && <p className="text-sm text-red-300">เกิดข้อผิดพลาด: {submitError}</p>}
@@ -430,7 +429,7 @@ export default function RegistrationPage() {
               transition={{ duration: 0.2 }}
               className="mt-6 rounded-2xl border border-[#43D5FF]/30 bg-[#43D5FF]/10 p-4 text-[#D4E6FF]"
             >
-              รับข้อมูลแบบฟอร์มเรียบร้อยแล้ว{previewName ? `: ${previewName}` : ""} (โหมดจำลอง)
+              ระบบทำกาบันทึกข้อมูลการสมัครเรียบร้อยแล้ว
             </motion.div>
           )}
         </motion.div>

@@ -7,7 +7,7 @@ This project is configured for static export and GitHub Pages deployment.
 - Static output is generated into `out/` during `npm run build`.
 - The GitHub Actions workflow at `.github/workflows/deploy-pages.yml` deploys the site automatically from the `main` branch.
 - A ready-to-publish `docs/` folder is also included as a fallback for GitHub Pages branch-based publishing.
-- The current configuration assumes the repository name is `Register-Website`, so the published site path is `/Register-Website/` on GitHub Pages.
+- The current configuration assumes the repository name is `libraryailab`, so the published site path is `/libraryailab/` on GitHub Pages.
 
 If you rename the repository, update `repoName` in `next.config.ts`.
 
