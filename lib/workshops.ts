@@ -88,7 +88,8 @@ export function mergeWorkshopCatalog(workshops: Partial<WorkshopRecord>[] | null
       ...fallback,
       ...override,
       code: fallback.code,
-      title: override?.title ?? fallback.title,
+      // Keep canonical titles from source to avoid rendering corrupted DB text.
+      title: fallback.title,
       topic_name: override?.topic_name ?? fallback.topic_name,
       event_date: override?.event_date ?? fallback.event_date,
       is_active: override?.is_active ?? fallback.is_active,

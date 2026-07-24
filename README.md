@@ -1,51 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## GitHub Pages
-
-This project is configured for static export and GitHub Pages deployment.
-
-- Static output is generated into `out/` during `npm run build`.
-- The GitHub Actions workflow at `.github/workflows/deploy-pages.yml` deploys the site automatically from the `main` branch.
-- A ready-to-publish `docs/` folder is also included as a fallback for GitHub Pages branch-based publishing.
-- The current configuration assumes the repository name is `libraryailab`, so the published site path is `/libraryailab/` on GitHub Pages.
-
-If you rename the repository, update `repoName` in `next.config.ts`.
-
-If GitHub Pages is showing the repository README instead of the website, the Pages source is pointing at the repository root instead of the built site.
-
-- Preferred: set `Settings > Pages > Source` to `GitHub Actions`.
-- Fallback: set `Settings > Pages > Source` to `Deploy from a branch`, branch `main`, folder `/docs`.
-
-### Required Supabase Variables For GitHub Actions
-
-GitHub Pages builds this site in CI, so browser env vars must be provided in repository secrets.
-
-Add these in `Settings > Secrets and variables > Actions > Repository secrets`:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-
-If either value is missing, the workflow now fails early with a clear error instead of deploying a broken build.
+This is a [Next.js](https://nextjs.org) application for LIBRARY AI LAB, prepared for deployment on a production server with Docker or Docker Compose.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies and run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Local Docker Workflow
+
+If you want both the web app and Supabase to run on Docker on the same machine:
+
+1. Start the local Supabase stack:
+
+```bash
+npm run supabase:start
+```
+
+2. Inspect the local endpoints and keys:
+
+```bash
+npm run supabase:status
+```
+
+3. Copy `.env.local.example` to `.env.local` and set:
+
+- `NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` to the local anon key reported by `supabase status`
+
+4. Start the web app in Docker:
+
+```bash
+npm run docker:dev
+```
+
+The browser will access the web app on `http://localhost:3000` and Supabase on `http://localhost:54321`.
+
+## Environment Variables
+
+The browser-side Supabase client requires these public environment variables:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+For local Docker deployment, copy `.env.production.example` to `.env.production` and fill in real values.
+
+`NEXT_PUBLIC_SUPABASE_URL` must be a URL that the end user's browser can reach. Do not use `http://127.0.0.1:54321` or `http://localhost:54321` in production unless the browser is running on the same machine as the Supabase API.
+
+If you self-host Supabase on the same server, publish it behind a real hostname or public IP, for example `https://supabase.example.com`, then use that URL in `NEXT_PUBLIC_SUPABASE_URL`.
+
+## Production Deployment
+
+Build and validate the application locally:
+
+```bash
+npm run build
+```
+
+Run the app directly with Docker Compose:
+
+```bash
+docker compose --env-file .env.production up --build -d
+```
+
+Run the app behind Nginx reverse proxy:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml up --build -d
+```
+
+Detailed deployment steps are in `DOCKER_DEPLOYMENT.md`.
 
 ## Learn More
 
@@ -55,9 +85,3 @@ To learn more about Next.js, take a look at the following resources:
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

@@ -9,6 +9,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { formatWorkshopDate, mergeWorkshopCatalog, type TopicStatus, type WorkshopRecord } from "@/lib/workshops";
 
 const ADMIN_SESSION_KEY = "library-ai-lab-admin-user";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type WorkshopRow = WorkshopRecord & { id: string };
 
@@ -33,6 +34,8 @@ type RegistrationRow = {
   email: string;
 };
 
+type WorkshopCatalogPayload = Pick<WorkshopRecord, "code" | "title" | "topic_name" | "event_date" | "is_active">;
+
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
     return error.message;
@@ -46,6 +49,20 @@ function getErrorMessage(error: unknown): string {
   }
 
   return "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ";
+}
+
+function hasValidWorkshopId(workshop: WorkshopRecord): workshop is WorkshopRow {
+  return typeof workshop.id === "string" && UUID_PATTERN.test(workshop.id);
+}
+
+function buildWorkshopCatalogPayload(workshops: WorkshopRecord[]): WorkshopCatalogPayload[] {
+  return workshops.map(({ code, title, topic_name, event_date, is_active }) => ({
+    code,
+    title,
+    topic_name,
+    event_date,
+    is_active,
+  }));
 }
 
 export default function AdminPage() {
@@ -97,18 +114,15 @@ export default function AdminPage() {
           throw new Error("ระบบยังไม่พร้อมใช้งาน: ยังไม่ได้ตั้งค่า Supabase Environment Variables");
         }
 
-        const [
-          { data: workshopData, error: workshopError },
-          { data: registrationData, error: registrationError },
-          { data: topicData, error: topicError },
-        ] = await Promise.all([
-          supabase.from("workshops").select("id, code, title, topic_name, event_date, is_active").order("event_date", { ascending: true }),
-          supabase.rpc("admin_list_registrations_all"),
-          supabase.rpc("admin_list_registration_topics_all"),
-        ]);
+        const [{ data: initialWorkshopData, error: initialWorkshopError }, { data: registrationData, error: registrationError }, { data: topicData, error: topicError }] =
+          await Promise.all([
+            supabase.from("workshops").select("id, code, title, topic_name, event_date, is_active").order("event_date", { ascending: true }),
+            supabase.rpc("admin_list_registrations_all"),
+            supabase.rpc("admin_list_registration_topics_all"),
+          ]);
 
-        if (workshopError) {
-          throw workshopError;
+        if (initialWorkshopError) {
+          throw initialWorkshopError;
         }
 
         if (registrationError) {
@@ -123,17 +137,43 @@ export default function AdminPage() {
           return;
         }
 
-        const mergedWorkshops = mergeWorkshopCatalog(workshopData).map((workshop) => ({
-          ...workshop,
-          id: workshop.id ?? workshopData?.find((row) => row.code === workshop.code)?.id ?? workshop.code,
-        }));
-        setWorkshops(mergedWorkshops);
-        setActiveCodes(mergedWorkshops.filter((workshop) => workshop.is_active).map((workshop) => workshop.code));
+        let workshopData = initialWorkshopData ?? [];
+        let mergedWorkshops = mergeWorkshopCatalog(workshopData);
 
-        setSelectedWorkshopCode((prev) => prev || mergedWorkshops[0]?.code || "");
+        if (mergedWorkshops.some((workshop) => !hasValidWorkshopId(workshop))) {
+          const { error: syncError } = await supabase.rpc("admin_sync_workshops_catalog", {
+            catalog: buildWorkshopCatalogPayload(mergedWorkshops),
+          });
+
+          if (syncError) {
+            throw syncError;
+          }
+
+          const { data: syncedWorkshopData, error: syncedWorkshopError } = await supabase
+            .from("workshops")
+            .select("id, code, title, topic_name, event_date, is_active")
+            .order("event_date", { ascending: true });
+
+          if (syncedWorkshopError) {
+            throw syncedWorkshopError;
+          }
+
+          workshopData = syncedWorkshopData ?? [];
+          mergedWorkshops = mergeWorkshopCatalog(workshopData);
+        }
+
+        const workshopRows = mergedWorkshops.map((workshop) => ({
+          ...workshop,
+          id: workshopData?.find((row) => row.code === workshop.code)?.id ?? workshop.id ?? workshop.code,
+        }));
+
+        setWorkshops(workshopRows);
+        setActiveCodes(workshopRows.filter((workshop) => workshop.is_active).map((workshop) => workshop.code));
+
+        setSelectedWorkshopCode((prev) => prev || workshopRows[0]?.code || "");
 
         const registrationById = new Map(((registrationData ?? []) as RegistrationRow[]).map((registration) => [registration.id, registration]));
-        const workshopById = new Map(mergedWorkshops.map((workshop) => [workshop.id, workshop]));
+        const workshopById = new Map(workshopRows.map((workshop) => [workshop.id, workshop]));
 
         const rows = ((topicData ?? []) as RegistrationTopicRow[])
           .map((topicRow) => {
@@ -293,16 +333,20 @@ export default function AdminPage() {
         throw new Error("ระบบยังไม่พร้อมใช้งาน: ยังไม่ได้ตั้งค่า Supabase Environment Variables");
       }
 
-      await Promise.all(
-        workshops.map(async (workshop) => {
-          const { error } = await supabase.from("workshops").update({ is_active: activeCodes.includes(workshop.code) }).eq("id", workshop.id);
-          if (error) {
-            throw error;
-          }
-        }),
-      );
+      const nextWorkshops = workshops.map((workshop) => ({
+        ...workshop,
+        is_active: activeCodes.includes(workshop.code),
+      }));
 
-      setWorkshops((prev) => prev.map((workshop) => ({ ...workshop, is_active: activeCodes.includes(workshop.code) })));
+      const { error } = await supabase.rpc("admin_sync_workshops_catalog", {
+        catalog: buildWorkshopCatalogPayload(nextWorkshops),
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setWorkshops(nextWorkshops);
       setActiveTopicsInfoMessage("อัปเดตรายการหัวข้อที่เปิดใช้งานแล้ว");
     } catch (error) {
       setActiveTopicsErrorMessage(getErrorMessage(error));
