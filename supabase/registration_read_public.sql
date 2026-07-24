@@ -10,11 +10,18 @@ create policy registration_topics_select_public
 on public.registration_topics
 for select
 to anon, authenticated
-using (true);
+using (status in ('Participant', 'Waiting'));
 
 drop policy if exists registrations_select_public on public.registrations;
 create policy registrations_select_public
 on public.registrations
 for select
 to anon, authenticated
-using (true);
+using (
+	exists (
+		select 1
+		from public.registration_topics
+		where registration_topics.registration_id = registrations.id
+			and registration_topics.status in ('Participant', 'Waiting')
+	)
+);

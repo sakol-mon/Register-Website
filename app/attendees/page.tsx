@@ -6,11 +6,14 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { formatTopicLabel, mergeWorkshopCatalog, type TopicStatus, type WorkshopRecord } from "@/lib/workshops";
 
 type Attendee = {
   id: string;
   full_name: string;
-  topics: string;
+  topicCode: string;
+  topicLabel: string;
+  status: TopicStatus;
 };
 
 const navLinks = ["Home", "About", "Speakers", "Schedule", "Registration", "รายชื่อผู้เข้าอบรม", "Contact"];
@@ -46,34 +49,6 @@ function getErrorMessage(error: unknown): string {
   return "ไม่สามารถโหลดรายชื่อผู้เข้าอบรมได้";
 }
 
-function formatTopicLabel(topicName: string): string {
-  if (topicName.includes("AI for Research")) {
-    return "Prism";
-  }
-
-  if (topicName === "Data Analysis") {
-    return "Data Analysis with AI";
-  }
-
-  if (topicName === "Scopus AI") {
-    return "Scopus AI & Consensus & Elicit";
-  }
-
-  return topicName;
-}
-
-function getTopicSortKey(topicName: string): string {
-  if (topicName === "Scopus AI & Consensus & Elicit") {
-    return "Scopus AI";
-  }
-
-  if (topicName === "Data Analysis with AI") {
-    return "Data Analysis";
-  }
-
-  return topicName;
-}
-
 export default function AttendeesPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -81,7 +56,6 @@ export default function AttendeesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [searchText, setSearchText] = useState("");
-  const [topicAccessHint, setTopicAccessHint] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 18);
@@ -103,15 +77,15 @@ export default function AttendeesPage() {
           throw new Error("ระบบยังไม่พร้อมใช้งาน: ยังไม่ได้ตั้งค่า Supabase Environment Variables");
         }
 
-        const registrationsPromise = supabase.from("registrations").select("id, full_name, organization, role").order("full_name", { ascending: true });
-        const registrationTopicsPromise = supabase.from("registration_topics").select("registration_id, workshop_id");
-        const workshopsPromise = supabase.from("workshops").select("id, code, topic_name, title");
-
         const [
           { data: registrations, error: registrationsError },
           { data: registrationTopics, error: registrationTopicsError },
-          { data: workshops, error: workshopsError },
-        ] = await Promise.all([registrationsPromise, registrationTopicsPromise, workshopsPromise]);
+          { data: workshopData, error: workshopsError },
+        ] = await Promise.all([
+          supabase.from("registrations").select("id, full_name").order("full_name", { ascending: true }),
+          supabase.from("registration_topics").select("registration_id, workshop_id, status"),
+          supabase.from("workshops").select("id, code, topic_name, title, event_date, is_active").order("event_date", { ascending: true }),
+        ]);
 
         if (registrationsError) {
           throw registrationsError;
@@ -129,44 +103,48 @@ export default function AttendeesPage() {
           return;
         }
 
-        setTopicAccessHint((registrations?.length ?? 0) > 0 && (registrationTopics?.length ?? 0) === 0);
+        const mergedWorkshops = mergeWorkshopCatalog(workshopData);
+        const activeWorkshopCodes = new Set(mergedWorkshops.filter((workshop) => workshop.is_active).map((workshop) => workshop.code));
 
+        const registrationById = new Map((registrations ?? []).map((registration) => [registration.id, registration]));
         const workshopById = new Map(
-          (workshops ?? []).map((workshop) => [
-            workshop.id,
-            {
-              label: formatTopicLabel(workshop.topic_name || workshop.title || workshop.code),
-              sortKey: getTopicSortKey(workshop.topic_name || workshop.title || workshop.code),
-            },
-          ]),
+          mergedWorkshops
+            .filter((workshop): workshop is WorkshopRecord & { id: string } => Boolean(workshop.id))
+            .map((workshop) => [workshop.id, workshop]),
         );
 
-        const topicIdsByRegistration = new Map<string, string[]>();
-        for (const row of registrationTopics ?? []) {
-          const current = topicIdsByRegistration.get(row.registration_id) ?? [];
-          topicIdsByRegistration.set(row.registration_id, [...current, row.workshop_id]);
-        }
+        const rows = (registrationTopics ?? [])
+          .map((topicRow) => {
+            const registration = registrationById.get(topicRow.registration_id);
+            const workshop = workshopById.get(topicRow.workshop_id);
 
-        const rows = (registrations ?? []).map((registration) => ({
-          id: registration.id,
-          full_name: registration.full_name,
-          topics:
-            (topicIdsByRegistration.get(registration.id) ?? [])
-              .map((workshopId) => workshopById.get(workshopId))
-              .filter((topic): topic is { label: string; sortKey: string } => Boolean(topic))
-              .sort((left, right) => left.sortKey.localeCompare(right.sortKey, "th"))
-              .map((topic) => topic.label)
-              .join(", ") || "ยังไม่มีหัวข้อที่สมัคร",
-        }));
+            if (!registration || !workshop) {
+              return null;
+            }
 
-        setAttendees(rows as Attendee[]);
+            if (!activeWorkshopCodes.has(workshop.code)) {
+              return null;
+            }
+
+            const baseLabel = formatTopicLabel(workshop.topic_name || workshop.title || workshop.code);
+
+            return {
+              id: `${topicRow.registration_id}-${topicRow.workshop_id}`,
+              full_name: registration.full_name,
+              topicCode: workshop.code,
+              topicLabel: topicRow.status === "Waiting" ? `${baseLabel} (สำรอง)` : baseLabel,
+              status: topicRow.status as TopicStatus,
+            };
+          })
+          .filter((row): row is Attendee => Boolean(row));
+
+        setAttendees(rows);
       } catch (error) {
         if (!isActive) {
           return;
         }
 
         setAttendees([]);
-        setTopicAccessHint(false);
         setErrorMessage(getErrorMessage(error));
       } finally {
         if (isActive) {
@@ -189,10 +167,7 @@ export default function AttendeesPage() {
       return attendees;
     }
 
-    return attendees.filter((attendee) => {
-      const haystack = [attendee.full_name, attendee.topics].join(" ").toLowerCase();
-      return haystack.includes(query);
-    });
+    return attendees.filter((attendee) => attendee.full_name.toLowerCase().includes(query));
   }, [attendees, searchText]);
 
   return (
@@ -265,50 +240,40 @@ export default function AttendeesPage() {
               <div className="max-w-3xl">
                 <p className="text-sm tracking-[0.2em] text-[#56A6FF]">ATTENDEES LIST</p>
                 <h1 className="mt-2 font-(family-name:--font-poppins) text-3xl font-bold text-white sm:text-4xl">รายชื่อผู้เข้าอบรม</h1>
-                <p className="mt-3 text-zinc-300">แสดงรายชื่อผู้สมัครและหัวข้อที่สมัครจาก Supabase ในตารางเดียว</p>
+                <p className="mt-3 text-zinc-300">แสดงรายชื่อเฉพาะหัวข้อที่เปิดรับอยู่ โดยผู้ที่มีสถานะ Waiting จะแสดงเป็นรายชื่อสำรอง</p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[320px]">
-                <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
-                  <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Total</p>
-                  <p className="mt-1 text-2xl font-semibold text-white">{attendees.length.toLocaleString()}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
-                  <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Visible</p>
-                  <p className="mt-1 text-2xl font-semibold text-white">{filteredAttendees.length.toLocaleString()}</p>
-                </div>
+              <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 lg:min-w-[220px]">
+                <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Total</p>
+                <p className="mt-1 text-2xl font-semibold text-white">{attendees.length.toLocaleString()}</p>
               </div>
             </div>
 
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <label className="flex w-full max-w-xl items-center gap-3 rounded-2xl border border-white/15 bg-white/8 px-4 py-3 text-zinc-200 focus-within:border-[#56A6FF]/50">
-                <Search className="size-5 shrink-0 text-[#56A6FF]" />
-                <input
-                  value={searchText}
-                  onChange={(event) => setSearchText(event.target.value)}
-                  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-zinc-400"
-                  placeholder="ค้นหาชื่อหรือหัวข้อที่สมัคร"
-                />
-              </label>
+            <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="w-full">
+                <label className="flex w-full items-center gap-3 rounded-2xl border border-white/15 bg-white/8 px-4 py-3 text-zinc-200 focus-within:border-[#56A6FF]/50">
+                  <Search className="size-5 shrink-0 text-[#56A6FF]" />
+                  <input
+                    value={searchText}
+                    onChange={(event) => setSearchText(event.target.value)}
+                    className="w-full bg-transparent text-sm text-white outline-none placeholder:text-zinc-400"
+                    placeholder="ค้นหาชื่อ"
+                  />
+                </label>
+              </div>
 
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:border-[#43D5FF]/50 hover:text-[#56A6FF]"
+                className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-zinc-100 transition hover:border-[#43D5FF]/50 hover:text-[#56A6FF]"
+                aria-label="รีเฟรชข้อมูล"
+                title="รีเฟรชข้อมูล"
               >
                 <RefreshCw size={16} />
-                รีเฟรชข้อมูล
               </button>
             </div>
 
             <div className="mt-8">
-              {topicAccessHint && !errorMessage && (
-                <div className="mb-4 rounded-2xl border border-amber-300/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                  พบรายชื่อผู้สมัคร แต่ยังไม่พบความสัมพันธ์หัวข้อในผลลัพธ์ที่อ่านได้ของตาราง registration_topics
-                  โปรดรันไฟล์ SQL ใน supabase/registration_read_public.sql เพื่อเปิดสิทธิ์อ่านสำหรับหน้าแสดงผลนี้
-                </div>
-              )}
-
               {isLoading ? (
                 <div className="flex min-h-[320px] items-center justify-center rounded-3xl border border-white/10 bg-white/5">
                   <div className="flex items-center gap-3 text-zinc-200">
@@ -325,14 +290,12 @@ export default function AttendeesPage() {
                 <div className="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/15 bg-white/5 px-6 text-center">
                   {searchText.trim() ? (
                     <>
-                      <h2 className="mt-4 text-xl font-semibold text-white">ยังไม่มีข้อมูลที่ตรงกับคำค้น</h2>
-                      <p className="mt-2 max-w-xl text-sm text-zinc-300">
-                        ลองเปลี่ยนคำค้น หรือเคลียร์คำค้นเพื่อดูรายชื่อทั้งหมด
-                      </p>
+                      <h2 className="mt-4 text-xl font-semibold text-white">ยังไม่มีข้อมูลที่ตรงกับชื่อที่ค้นหา</h2>
+                      <p className="mt-2 max-w-xl text-sm text-zinc-300">ลองเปลี่ยนคำค้น หรือเคลียร์ช่องค้นหาเพื่อดูรายชื่อทั้งหมดในหัวข้อที่เลือก</p>
                     </>
                   ) : (
                     <>
-                      <h2 className="mt-4 text-xl font-semibold text-white">ยังไม่มีข้อมูลผู้เข้าอบรมในระบบ</h2>
+                      <h2 className="mt-4 text-xl font-semibold text-white">ยังไม่มีข้อมูลผู้เข้าอบรมในหัวข้อนี้</h2>
                     </>
                   )}
                 </div>
@@ -355,7 +318,7 @@ export default function AttendeesPage() {
                           className="border-t border-white/10 text-white hover:bg-white/5"
                         >
                           <td className="px-6 py-4 align-top font-medium">{attendee.full_name}</td>
-                          <td className="px-6 py-4 align-top text-zinc-200">{attendee.topics}</td>
+                          <td className="px-6 py-4 align-top text-zinc-200">{attendee.topicLabel}</td>
                         </motion.tr>
                       ))}
                     </tbody>

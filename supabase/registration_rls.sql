@@ -4,8 +4,10 @@
 grant usage on schema public to anon, authenticated;
 
 grant insert on table public.registrations to anon, authenticated;
-grant select on table public.workshops to anon, authenticated;
+grant select, update on table public.workshops to anon, authenticated;
 grant insert on table public.registration_topics to anon, authenticated;
+grant select on table public.registration_topics to anon, authenticated;
+grant select on table public.registrations to anon, authenticated;
 
 alter table public.registrations enable row level security;
 alter table public.workshops enable row level security;
@@ -23,13 +25,42 @@ create policy workshops_select_active
 on public.workshops
 for select
 to anon, authenticated
-using (is_active = true);
+using (true);
 
 drop policy if exists registration_topics_insert_public on public.registration_topics;
 create policy registration_topics_insert_public
 on public.registration_topics
 for insert
 to anon, authenticated
+with check (true);
+
+drop policy if exists registration_topics_select_public on public.registration_topics;
+create policy registration_topics_select_public
+on public.registration_topics
+for select
+to anon, authenticated
+using (status in ('Participant', 'Waiting'));
+
+drop policy if exists registrations_select_public on public.registrations;
+create policy registrations_select_public
+on public.registrations
+for select
+to anon, authenticated
+using (
+  exists (
+    select 1
+    from public.registration_topics
+    where registration_topics.registration_id = registrations.id
+      and registration_topics.status in ('Participant', 'Waiting')
+  )
+);
+
+drop policy if exists workshops_update_public on public.workshops;
+create policy workshops_update_public
+on public.workshops
+for update
+to anon, authenticated
+using (true)
 with check (true);
 
 -- Seed workshop rows (safe to run once).

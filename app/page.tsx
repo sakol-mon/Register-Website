@@ -25,8 +25,10 @@ import speakerImage1 from "@/image/1.png";
 import speakerImage2 from "@/image/2.png";
 import speakerImage3 from "@/image/3.png";
 import speakerImage4 from "@/image/4.png";
-import posterImage from "@/image/poster.jpg";
+import posterImage from "@/image/poster.png";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { formatWorkshopDate, mergeWorkshopCatalog, type WorkshopRecord } from "@/lib/workshops";
 
 const navLinks = ["Home", "About", "Speakers", "Schedule", "Registration", "รายชื่อผู้เข้าอบรม", "Contact"];
 
@@ -72,17 +74,6 @@ const speakers = [
     date: "30 กันยายน 2569",
   },
 ];
-
-const timeline = [
-  { title: "ครั้งที่ 1", topic: "NotebookLM", date: "19 สิงหาคม พ.ศ. 2569" },
-  { title: "ครั้งที่ 2", topic: "Claude", date: "2 กันยายน พ.ศ. 2569" },
-  { title: "ครั้งที่ 3", topic: "Gemini", date: "16 กันยายน พ.ศ. 2569" },
-  { title: "ครั้งที่ 4", topic: "Prism", date: "30 กันยายน พ.ศ. 2569" },
-  { title: "ครั้งที่ 5", topic: "Antigravity 2.0", date: "14 ตุลาคม พ.ศ. 2569" },
-  { title: "ครั้งที่ 6", topic: "n8n", date: "28 ตุลาคม พ.ศ. 2569" },
-  { title: "ครั้งที่ 7", topic: "AI เพื่อสนับสนุนงานวิชาการ (Scopus AI & Consensus & Elicit)", date: "11 พฤศจิกายน พ.ศ. 2569" },
-  { title: "ครั้งที่ 8", topic: "data analysis with ai", date: "25 พฤศจิกายน พ.ศ. 2569" },
-] as const;
 
 const faq = [
   {
@@ -135,13 +126,16 @@ const thaiMonths: { [key: string]: number } = {
   กันยายน: 8, ตุลาคม: 9, พฤศจิกายน: 10, ธันวาคม: 11,
 };
 
-// Parse Thai date format "DD เดือน พ.ศ. YYYY" to Date
-function parseThaiDate(thaiDateStr: string): Date {
-  const parts = thaiDateStr.split(" ");
-  const day = parseInt(parts[0]);
+function parseWorkshopDate(dateStr: string): Date {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    const [year, month, day] = dateStr.split("-").map((value) => parseInt(value, 10));
+    return new Date(year, month - 1, day, 9, 0, 0);
+  }
+
+  const parts = dateStr.split(" ");
+  const day = parseInt(parts[0], 10);
   const month = thaiMonths[parts[1]];
-  const buddhYearStr = parts[3];
-  const buddhYear = parseInt(buddhYearStr);
+  const buddhYear = parseInt(parts[3], 10);
   const gregorianYear = buddhYear - 543;
 
   return new Date(gregorianYear, month, day, 9, 0, 0);
@@ -153,7 +147,7 @@ function getTimelineItemState(dateStr: string): "completed" | "current" | "upcom
   const now = new Date();
   const bangkokTime = new Date(now.getTime() + (7 * 60 * 60 * 1000) - (now.getTimezoneOffset() * 60 * 1000));
 
-  const itemDate = parseThaiDate(dateStr);
+  const itemDate = parseWorkshopDate(dateStr);
 
   // Start of the day for comparison
   const startOfDay = new Date(itemDate);
@@ -204,6 +198,7 @@ export default function Home() {
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [posterOpen, setPosterOpen] = useState(false);
   const [posterZoom, setPosterZoom] = useState(1);
+  const [workshops, setWorkshops] = useState<WorkshopRecord[]>(mergeWorkshopCatalog(undefined));
   const posterViewportRef = useRef<HTMLDivElement | null>(null);
   const pendingPosterFocusRef = useRef<{ x: number; y: number } | null>(null);
   const pendingPosterRestoreRef = useRef(false);
@@ -229,6 +224,42 @@ export default function Home() {
     return () => {
       window.clearTimeout(initializeId);
       window.clearInterval(id);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadWorkshops() {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        if (!supabase) {
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("workshops")
+          .select("id, code, title, topic_name, event_date, is_active")
+          .order("event_date", { ascending: true });
+
+        if (error) {
+          throw error;
+        }
+
+        if (!isActive) {
+          return;
+        }
+
+        setWorkshops(mergeWorkshopCatalog(data));
+      } catch {
+        // Keep fallback workshop catalog if DB is not reachable.
+      }
+    }
+
+    void loadWorkshops();
+
+    return () => {
+      isActive = false;
     };
   }, []);
 
@@ -331,6 +362,18 @@ export default function Home() {
     pendingPosterRestoreRef.current = true;
     setPosterZoom(nextZoom);
   };
+
+  const timeline = useMemo(
+    () =>
+      workshops.map((workshop) => ({
+        title: workshop.title,
+        topic: workshop.topic_name,
+        date: formatWorkshopDate(workshop.event_date),
+        eventDate: workshop.event_date,
+        isActive: workshop.is_active,
+      })),
+    [workshops],
+  );
 
   const eventCards = useMemo(
     () => [
@@ -568,17 +611,19 @@ export default function Home() {
                 <div className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2 bg-gradient-to-r from-[#2F7CFF]/80 via-[#43D5FF] to-[#56A6FF]/80" />
                 <div className="grid grid-cols-8 gap-4">
                   {timeline.map((item) => {
-                    const state = getTimelineItemState(item.date);
+                    const state = getTimelineItemState(item.eventDate);
                     const tone =
                       state === "completed"
                         ? "border-[#00D27A]/70 bg-[#00D27A]/12 text-[#00D27A]"
                         : state === "current"
                           ? "border-[#43D5FF]/70 bg-[#43D5FF]/12 text-[#D4E6FF] shadow-[0_0_35px_rgba(67,213,255,0.5)]"
-                          : "border-[#2F7CFF]/50 bg-[#2F7CFF]/10 text-zinc-100";
+                          : item.isActive
+                            ? "border-[#FFB84D]/65 bg-[#FFB84D]/12 text-[#FFE4B5] shadow-[0_0_30px_rgba(255,184,77,0.25)]"
+                            : "border-[#2F7CFF]/50 bg-[#2F7CFF]/10 text-zinc-100";
 
                     return (
                       <div key={item.title} className="relative z-10 text-center">
-                        <div className={cn("mx-auto mb-5 flex h-4 w-4 rounded-full", state === "completed" ? "bg-[#00D27A]" : state === "current" ? "bg-[#43D5FF] shadow-[0_0_18px_rgba(67,213,255,0.9)]" : "bg-[#2F7CFF]")} />
+                        <div className={cn("mx-auto mb-5 flex h-4 w-4 rounded-full", state === "completed" ? "bg-[#00D27A]" : state === "current" ? "bg-[#43D5FF] shadow-[0_0_18px_rgba(67,213,255,0.9)]" : item.isActive ? "bg-[#FFB84D] shadow-[0_0_18px_rgba(255,184,77,0.85)]" : "bg-[#2F7CFF]")} />
                         <article className={cn("glass-card h-[200px] flex flex-col p-4 text-sm", tone)}>
                           <p className="font-semibold">{item.title}</p>
                           <p className="mt-2 leading-snug flex-1 line-clamp-4">{item.topic}</p>
@@ -594,10 +639,10 @@ export default function Home() {
             <div className="mt-10 xl:hidden">
               <div className="relative ml-4 border-l border-[#2F65D8]/30 pl-8">
                 {timeline.map((item) => {
-                  const state = getTimelineItemState(item.date);
+                  const state = getTimelineItemState(item.eventDate);
                   return (
                     <article key={item.title} className="relative mb-6">
-                      <span className={cn("absolute -left-[42px] top-8 h-4 w-4 rounded-full", state === "completed" ? "bg-[#00D27A]" : state === "current" ? "bg-[#43D5FF] shadow-[0_0_18px_rgba(67,213,255,0.9)]" : "bg-[#2F7CFF]")} />
+                      <span className={cn("absolute -left-[42px] top-8 h-4 w-4 rounded-full", state === "completed" ? "bg-[#00D27A]" : state === "current" ? "bg-[#43D5FF] shadow-[0_0_18px_rgba(67,213,255,0.9)]" : item.isActive ? "bg-[#FFB84D] shadow-[0_0_18px_rgba(255,184,77,0.85)]" : "bg-[#2F7CFF]")} />
                       <div className="glass-card p-5 flex flex-col h-[180px]">
                         <p className="text-sm font-semibold text-zinc-100">{item.title}</p>
                         <p className="mt-1 text-base text-white flex-1 line-clamp-3">{item.topic}</p>
@@ -812,21 +857,29 @@ export default function Home() {
             <p className="mt-1 text-zinc-300">อีเมล: sakol.mon@mahidol.ac.th</p>
           </div>
           <div className="md:text-right">
-            <div className="inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/8 px-4 py-2 text-zinc-200">
-              <UserRound size={16} />
-              Follow us on social media
-            </div>
-            <div className="mt-5 flex gap-3 md:justify-end">
-              {["F", "X", "IG", "YT"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-sm font-semibold text-white transition hover:border-cyan-200/60 hover:text-cyan-100"
-                  aria-label={`Open ${item} channel`}
-                >
-                  {item}
-                </a>
-              ))}
+            <div className="flex flex-col items-start md:items-end">
+              <Link
+                href="/admin"
+                className="focus-ring inline-flex items-center justify-center rounded-full border border-[#FFB84D]/55 bg-[#FFB84D]/12 px-5 py-3 text-sm font-semibold text-[#FFE4B5] transition hover:bg-[#FFB84D]/20 hover:text-white"
+              >
+                Login as Admin
+              </Link>
+              <div className="mt-5 inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/8 px-4 py-2 text-zinc-200">
+                <UserRound size={16} />
+                Follow us on social media
+              </div>
+              <div className="mt-5 flex gap-3 md:justify-end">
+                {["F", "X", "IG", "YT"].map((item) => (
+                  <a
+                    key={item}
+                    href="#"
+                    className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-sm font-semibold text-white transition hover:border-cyan-200/60 hover:text-cyan-100"
+                    aria-label={`Open ${item} channel`}
+                  >
+                    {item}
+                  </a>
+                ))}
+              </div>
             </div>
             <p className="mt-8 text-sm text-zinc-400">© 2026 LIBRARY AI LAB. All rights reserved.</p>
           </div>

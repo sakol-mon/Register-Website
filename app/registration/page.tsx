@@ -6,6 +6,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { formatWorkshopDate, mergeWorkshopCatalog, type WorkshopRecord } from "@/lib/workshops";
 
 const navLinks = ["Home", "About", "Speakers", "Schedule", "Registration", "รายชื่อผู้เข้าอบรม", "Contact"];
 
@@ -24,17 +25,6 @@ function navHref(item: string): string {
 
   return `/#${item.toLowerCase()}`;
 }
-
-const workshopOptions = [
-  { id: "NotebookLM", title: "ครั้งที่ 1", topic: "NotebookLM", date: "19 สิงหาคม พ.ศ. 2569" },
-  { id: "Claude", title: "ครั้งที่ 2", topic: "Claude", date: "2 กันยายน พ.ศ. 2569" },
-  { id: "Gemini", title: "ครั้งที่ 3", topic: "Gemini", date: "16 กันยายน พ.ศ. 2569" },
-  { id: "AI for Research", title: "ครั้งที่ 4", topic: "Prism", date: "30 กันยายน พ.ศ. 2569" },
-  { id: "Antigravity 2.0", title: "ครั้งที่ 5", topic: "Antigravity 2.0", date: "14 ตุลาคม พ.ศ. 2569" },
-  { id: "n8n", title: "ครั้งที่ 6", topic: "n8n", date: "28 ตุลาคม พ.ศ. 2569" },
-  { id: "Scopus AI", title: "ครั้งที่ 7", topic: "Scopus AI & Consensus & Elicit", date: "11 พฤศจิกายน พ.ศ. 2569" },
-  { id: "Data Analysis", title: "ครั้งที่ 8", topic: "Data Analysis with AI", date: "25 พฤศจิกายน พ.ศ. 2569" },
-];
 
 const strictEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -62,6 +52,8 @@ export default function RegistrationPage() {
   const [previewName, setPreviewName] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState("");
+  const [availableWorkshops, setAvailableWorkshops] = useState<WorkshopRecord[]>([]);
+  const [isWorkshopLoading, setIsWorkshopLoading] = useState(true);
 
   const organizationRequired = selectedRole === "student" || selectedRole === "staff";
 
@@ -70,6 +62,51 @@ export default function RegistrationPage() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadWorkshops() {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        if (!supabase) {
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("workshops")
+          .select("id, code, title, topic_name, event_date, is_active")
+          .order("event_date", { ascending: true });
+
+        if (error) {
+          throw error;
+        }
+
+        if (!isActive) {
+          return;
+        }
+
+        const activeWorkshops = mergeWorkshopCatalog(data).filter((workshop) => workshop.is_active);
+        setAvailableWorkshops(activeWorkshops);
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        setSubmitError(getErrorMessage(error));
+      } finally {
+        if (isActive) {
+          setIsWorkshopLoading(false);
+        }
+      }
+    }
+
+    void loadWorkshops();
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -105,12 +142,6 @@ export default function RegistrationPage() {
       return;
     }
 
-    if (selectedTopicCodes.length > 2) {
-      setSubmitted(false);
-      setSubmitError("เลือกหัวข้อที่สนใจได้ไม่เกิน 2 รายการ");
-      return;
-    }
-
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
       setSubmitted(false);
@@ -125,6 +156,7 @@ export default function RegistrationPage() {
       const { data: workshops, error: workshopsError } = await supabase
         .from("workshops")
         .select("id, code")
+        .eq("is_active", true)
         .in("code", selectedTopicCodes);
 
       if (workshopsError) {
@@ -175,15 +207,10 @@ export default function RegistrationPage() {
     }
   };
 
-  const handleTopicToggle = (topicId: string, checked: boolean, input: HTMLInputElement) => {
+  const handleTopicToggle = (topicId: string, checked: boolean) => {
     setSelectedTopics((prev) => {
       if (checked) {
         if (prev.includes(topicId)) {
-          return prev;
-        }
-
-        if (prev.length >= 2) {
-          input.checked = false;
           return prev;
         }
 
@@ -354,26 +381,32 @@ export default function RegistrationPage() {
             </label>
 
             <fieldset className="rounded-2xl border border-white/20 bg-white/8 p-4">
-              <legend className="px-2 text-sm font-semibold text-zinc-100">หัวข้อที่สนใจ (เลือกได้ไม่เกิน 2 รายการ)</legend>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {workshopOptions.map((workshop) => (
+              <legend className="px-2 text-sm font-semibold text-zinc-100">หัวข้อที่สนใจ</legend>
+              {isWorkshopLoading ? (
+                <p className="mt-4 text-sm text-zinc-300">กำลังโหลดหัวข้ออบรม...</p>
+              ) : availableWorkshops.length === 0 ? (
+                <p className="mt-4 text-sm text-amber-200">ยังไม่มีหัวข้อที่เปิดรับสมัครจากระบบ Admin</p>
+              ) : (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {availableWorkshops.map((workshop) => (
                   <label key={workshop.id} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/8 cursor-pointer">
                     <input
                       type="checkbox"
                       name="topics"
-                      value={workshop.id}
-                      onChange={(event) => handleTopicToggle(workshop.id, event.target.checked, event.currentTarget)}
+                      value={workshop.code}
+                      onChange={(event) => handleTopicToggle(workshop.code, event.target.checked)}
                       className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#43D5FF]"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold text-[#56A6FF]">{workshop.title}</p>
-                      <p className="text-sm font-medium text-zinc-100">{workshop.topic}</p>
-                      <p className="text-xs text-zinc-400">📅 {workshop.date}</p>
+                      <p className="text-sm font-medium text-zinc-100">{workshop.topic_name}</p>
+                      <p className="text-xs text-zinc-400">📅 {formatWorkshopDate(workshop.event_date)}</p>
                     </div>
                   </label>
-                ))}
-              </div>
-              <p className="mt-4 text-xs text-zinc-400">เลือกแล้ว {selectedTopics.length}/2 รายการ</p>
+                  ))}
+                </div>
+              )}
+              <p className="mt-4 text-xs text-zinc-400">เลือกแล้ว {selectedTopics.length} รายการ</p>
             </fieldset>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
